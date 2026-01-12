@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "ai-mock-interviewer"
+version = "0.1.0"
+description = "AI Mock Interview Agent using CrewAI"
+authors = ["Your Name"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+crewai = "*"
+langchain = "*"
+pydantic = "*"
+pydantic-settings = "*"
+playwright = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
