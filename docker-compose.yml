@@ -7,16 +7,18 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
+    environment:
+      # GPU Optimization for Apple Silicon (Metal)
+      - OLLAMA_NUM_GPU=1
+      - OLLAMA_GPU_LAYERS=999  # Load all layers to GPU
+      - OLLAMA_NUM_THREAD=8    # Match M1 GPU cores
+      - OLLAMA_MAX_LOADED_MODELS=1  # Keep model in memory
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 10s
       timeout: 5s
       retries: 5
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - capabilities: [gpu]
+
 
   app:
     build: .

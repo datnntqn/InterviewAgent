@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Mock Interview Agent - Real CrewAI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .agent-card {
+            transition: all 0.3s ease;
+        }
+        
+        .agent-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .typing-indicator {
+            display: inline-flex;
+            gap: 4px;
+        }
+        
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #667eea;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // API Configuration
+        const API_BASE_URL = 'http://localhost:8000';
+
+        // Agent status component
+        const AgentStatus = ({ agent, status, message, result }) => {
+            const getStatusColor = () => {
+                switch (status) {
+                    case 'running': return 'bg-blue-100 text-blue-800 border-blue-300';
+                    case 'completed': return 'bg-green-100 text-green-800 border-green-300';
+                    case 'error': return 'bg-red-100 text-red-800 border-red-300';
+                    default: return 'bg-gray-100 text-gray-800 border-gray-300';
+                }
+            };
+
+            const getIcon = () => {
+                switch (agent) {
+                    case 'JD Analyst':
+                        return '📋';
+                    case 'Corporate Researcher':
+                        return '🏢';
+                    case 'Lead Interviewer':
+                        return '🎯';
+                    default:
+                        return '🤖';
+                }
+            };
+
+            return (
+                <div className={`agent-card p-4 rounded-lg border-2 ${getStatusColor()} slide-in mb-4`}>
+                    <div className="flex items-start gap-3">
+                        <div className="text-3xl">{getIcon()}</div>
+                        <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="font-semibold text-lg">{agent}</h3>
+                                {status === 'running' && (
+                                    <div className="typing-indicator">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                )}
+                                {status === 'completed' && (
+                                    <span className="text-green-600 text-xl">✓</span>
+                                )}
+                            </div>
+                            <p className="text-sm mb-2">{message}</p>
+                            {result && (
+                                <div className="mt-3 p-3 bg-white rounded-lg text-sm max-h-96 overflow-y-auto">
+                                    <pre className="whitespace-pre-wrap text-xs">{result}</pre>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Main App Component
+        const App = () => {
+            const [jobDescription, setJobDescription] = useState('');
+            const [userCV, setUserCV] = useState('');
+            const [companyName, setCompanyName] = useState('');
+            const [companyWebsite, setCompanyWebsite] = useState('');
+            const [tone, setTone] = useState('friendly');
+            const [level, setLevel] = useState('mid');
+            const [interviewType, setInterviewType] = useState('mixed');
+            
+            const [isProcessing, setIsProcessing] = useState(false);
+            const [agents, setAgents] = useState([]);
+            const [finalResult, setFinalResult] = useState(null);
+            const [error, setError] = useState(null);
+            const [serverStatus, setServerStatus] = useState('checking');
+
+            const resultsRef = useRef(null);
+
+            // Check server status on mount
+            useEffect(() => {
+                checkServerStatus();
+            }, []);
+
+            const checkServerStatus = async () => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/health`);
+                    if (response.ok) {
+                        setServerStatus('online');
+                    } else {
+                        setServerStatus('offline');
+                    }
+                } catch (err) {
+                    setServerStatus('offline');
+                }
+            };
+
+            const fillMockData = () => {
+                setJobDescription(`Senior Python Developer
+
+Requirements:
+- 5+ years of Python development experience
+- Strong knowledge of Django or Flask
+- Experience with PostgreSQL and Redis
+- Familiarity with Docker and Kubernetes
+- Understanding of RESTful API design
+- Experience with CI/CD pipelines
+
+Nice to have:
+- Experience with React or Vue.js
+- Knowledge of AWS or GCP
+- Contributions to open-source projects`);
+
+                setUserCV(`John Doe - Software Engineer
+
+Experience:
+- 6 years of Python development
+- Proficient in Django and Flask
+- Worked with PostgreSQL, MySQL, and MongoDB
+- Experience with Docker
+- Built multiple RESTful APIs
+- Some experience with React
+
+Skills:
+Python, Django, Flask, PostgreSQL, Docker, Git, REST APIs, React
+
+Projects:
+- E-commerce platform using Django
+- Microservices architecture with Flask
+- Database optimization for high-traffic applications`);
+
+                setCompanyName('TechCorp');
+                setCompanyWebsite('https://www.example.com');
+                setTone('friendly');
+                setLevel('senior');
+                setInterviewType('mixed');
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setIsProcessing(true);
+                setAgents([]);
+                setFinalResult(null);
+                setError(null);
+
+                try {
+                    // Use Server-Sent Events for streaming
+                    const response = await fetch(`${API_BASE_URL}/api/prepare-stream`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            job_description: jobDescription,
+                            user_cv: userCV,
+                            company_name: companyName,
+                            company_website: companyWebsite,
+                            tone,
+                            level,
+                            interview_type: interviewType
+                        })
+                    });
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+
+                    while (true) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+
+                        const chunk = decoder.decode(value);
+                        const lines = chunk.split('\n');
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                const data = JSON.parse(line.slice(6));
+                                
+                                if (data.type === 'agent_start') {
+                                    setAgents(prev => [...prev, {
+                                        agent: data.agent,
+                                        status: 'running',
+                                        message: data.message,
+                                        result: null
+                                    }]);
+                                } else if (data.type === 'agent_complete') {
+                                    setAgents(prev => {
+                                        const updated = [...prev];
+                                        const index = updated.findIndex(a => a.agent === data.agent);
+                                        if (index !== -1) {
+                                            updated[index] = {
+                                                agent: data.agent,
+                                                status: 'completed',
+                                                message: data.message,
+                                                result: data.result
+                                            };
+                                        }
+                                        return updated;
+                                    });
+                                } else if (data.type === 'complete') {
+                                    setFinalResult({
+                                        status: 'success',
+                                        message: data.message
+                                    });
+                                } else if (data.type === 'error') {
+                                    setError(data.message);
+                                }
+                            }
+                        }
+                    }
+                } catch (err) {
+                    setError(err.message);
+                    console.error('Error:', err);
+                } finally {
+                    setIsProcessing(false);
+                }
+            };
+
+            useEffect(() => {
+                if (agents.length > 0 && resultsRef.current) {
+                    resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                }
+            }, [agents]);
+
+            return (
+                <div className="min-h-screen">
+                    {/* Header */}
+                    <div className="gradient-bg text-white py-8 px-4 shadow-lg">
+                        <div className="max-w-6xl mx-auto">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h1 className="text-4xl font-bold mb-2">🎯 AI Mock Interview Agent</h1>
+                                    <p className="text-blue-100">Powered by Real CrewAI & Llama 3</p>
+                                </div>
+                                <div className="text-right">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm">Server:</span>
+                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                            serverStatus === 'online' ? 'bg-green-500' :
+                                            serverStatus === 'offline' ? 'bg-red-500' : 'bg-yellow-500'
+                                        }`}>
+                                            {serverStatus === 'online' ? '● Online' :
+                                             serverStatus === 'offline' ? '● Offline' : '● Checking...'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {serverStatus === 'offline' && (
+                        <div className="max-w-6xl mx-auto px-4 py-4">
+                            <div className="bg-yellow-100 border-2 border-yellow-300 text-yellow-800 p-4 rounded-lg">
+                                <p className="font-semibold">⚠️ Server Offline</p>
+                                <p className="text-sm mt-1">Please start the API server:</p>
+                                <code className="block mt-2 bg-yellow-200 p-2 rounded text-xs">./start_server.sh</code>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="max-w-6xl mx-auto px-4 py-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            {/* Input Form */}
+                            <div className="bg-white rounded-xl shadow-lg p-6">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-800">Interview Details</h2>
+                                    <button
+                                        type="button"
+                                        onClick={fillMockData}
+                                        className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white text-sm font-semibold rounded-lg transition-colors shadow-md hover:shadow-lg"
+                                    >
+                                        📝 Fill Mock Data
+                                    </button>
+                                </div>
+                                
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Job Description *
+                                        </label>
+                                        <textarea
+                                            value={jobDescription}
+                                            onChange={(e) => setJobDescription(e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            rows="4"
+                                            placeholder="Paste the job description here..."
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Your CV/Resume *
+                                        </label>
+                                        <textarea
+                                            value={userCV}
+                                            onChange={(e) => setUserCV(e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            rows="4"
+                                            placeholder="Paste your CV here..."
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Company Name *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={companyName}
+                                            onChange={(e) => setCompanyName(e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            placeholder="e.g., TechCorp"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Company Website *
+                                        </label>
+                                        <input
+                                            type="url"
+                                            value={companyWebsite}
+                                            onChange={(e) => setCompanyWebsite(e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            placeholder="https://company.com"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Tone
+                                            </label>
+                                            <select
+                                                value={tone}
+                                                onChange={(e) => setTone(e.target.value)}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            >
+                                                <option value="friendly">😊 Friendly</option>
+                                                <option value="strict">😐 Strict</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Level
+                                            </label>
+                                            <select
+                                                value={level}
+                                                onChange={(e) => setLevel(e.target.value)}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            >
+                                                <option value="junior">Junior</option>
+                                                <option value="mid">Mid</option>
+                                                <option value="senior">Senior</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Type
+                                            </label>
+                                            <select
+                                                value={interviewType}
+                                                onChange={(e) => setInterviewType(e.target.value)}
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            >
+                                                <option value="technical">💻 Technical</option>
+                                                <option value="behavioral">🗣️ Behavioral</option>
+                                                <option value="mixed">🔀 Mixed</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={isProcessing || serverStatus !== 'online'}
+                                        className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-all ${
+                                            isProcessing || serverStatus !== 'online'
+                                                ? 'bg-gray-400 cursor-not-allowed'
+                                                : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl'
+                                        }`}
+                                    >
+                                        {isProcessing ? (
+                                            <span className="flex items-center justify-center gap-2">
+                                                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                                                </svg>
+                                                Processing with CrewAI...
+                                            </span>
+                                        ) : serverStatus !== 'online' ? (
+                                            '⚠️ Server Offline'
+                                        ) : (
+                                            '🚀 Start Interview Preparation'
+                                        )}
+                                    </button>
+                                </form>
+                            </div>
+
+                            {/* Results Panel */}
+                            <div className="bg-white rounded-xl shadow-lg p-6">
+                                <h2 className="text-2xl font-bold mb-6 text-gray-800">Agent Progress (Real-time)</h2>
+                                
+                                <div ref={resultsRef} className="space-y-4">
+                                    {agents.length === 0 && !error && (
+                                        <div className="text-center py-12 text-gray-400">
+                                            <div className="text-6xl mb-4">🤖</div>
+                                            <p className="font-medium">Ready to start</p>
+                                            <p className="text-sm mt-2">Fill in the details and click "Start"</p>
+                                            <p className="text-xs mt-4 text-gray-500">
+                                                Powered by CrewAI + Llama 3 via Ollama
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {agents.map((agent, index) => (
+                                        <AgentStatus key={index} {...agent} />
+                                    ))}
+
+                                    {error && (
+                                        <div className="bg-red-100 border-2 border-red-300 text-red-800 p-4 rounded-lg">
+                                            <p className="font-semibold">❌ Error:</p>
+                                            <p className="text-sm mt-1">{error}</p>
+                                        </div>
+                                    )}
+
+                                    {finalResult && (
+                                        <div className="bg-green-100 border-2 border-green-300 text-green-800 p-4 rounded-lg slide-in">
+                                            <p className="font-semibold text-lg mb-2">✅ {finalResult.message}</p>
+                                            <p className="text-sm">All agents have completed their tasks successfully!</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
