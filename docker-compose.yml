@@ -1,34 +1,16 @@
 version: "3.9"
 
 services:
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    environment:
-      # GPU Optimization for Apple Silicon (Metal)
-      - OLLAMA_NUM_GPU=1
-      - OLLAMA_GPU_LAYERS=999  # Load all layers to GPU
-      - OLLAMA_NUM_THREAD=8    # Match M1 GPU cores
-      - OLLAMA_MAX_LOADED_MODELS=1  # Keep model in memory
-    healthcheck:
-      test: ["CMD", "ollama", "list"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-
   app:
     build: .
     volumes:
       - ./src:/app/src
     environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
-    depends_on:
-      ollama:
-        condition: service_healthy
-
-volumes:
-  ollama_data:
+      # Groq API configuration
+      # Make sure to set GROQ_API_KEY in your .env file
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GROQ_MODEL_NAME=${GROQ_MODEL_NAME:-llama-3.3-70b-versatile}
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
