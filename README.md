@@ -1,201 +1,365 @@
-# Role
+# 🎯 AI Mock Interview Agent
 
-You are a Senior Python Architect and DevOps Engineer specializing in Generative AI applications. You are an expert in **CrewAI**, **Docker**, and **Microservices Architecture**.
+An intelligent interview preparation system powered by **CrewAI**, **Groq LLM**, and **Streamlit**.
 
-# Objective
+## 🌟 Features
 
-Initialize a new Python project for an **"AI Mock Interview Agent"**. The system uses CrewAI for orchestration, Playwright for web crawling, and a local LLM (Llama 3 via Ollama) for inference.
+- **AI-Powered Analysis**: Multi-agent system analyzes job descriptions and CVs
+- **Company Research**: Automated company culture and values research
+- **Personalized Questions**: Technical, behavioral, and company-specific questions
+- **STAR Framework**: Structured guidance for behavioral questions
+- **Interactive Dashboard**: Beautiful Streamlit UI for interview preparation
+- **Real-time Processing**: Watch AI agents work in real-time
 
-# AI Mock Interview Agent
+## 📁 Project Structure
 
-## Project Structure
-
-```text
-ai-mock-interviewer/
-├── docker-compose.yml
-├── Dockerfile
-├── pyproject.toml
-├── .env.example
-├── src/
-│   ├── __init__.py
-│   ├── main.py
-│   ├── config.py
-│   ├── models/
-│   │   └── schemas.py
-│   ├── tools/
-│   │   └── scraper.py
-│   ├── agents/
-│   ├── tasks/
-│   └── crews/
-└── data/
+```
+Interview-Agent/
+├── ai/                          # AI/Agent Layer
+│   ├── prompts/                # YAML-based prompt configurations
+│   │   ├── agents/            # Agent configurations
+│   │   └── tasks/             # Task configurations
+│   ├── src/
+│   │   ├── agents/            # CrewAI agents
+│   │   ├── tasks/             # CrewAI tasks
+│   │   ├── crews/             # Crew definitions
+│   │   ├── models/            # Pydantic output models
+│   │   ├── tools/             # Custom tools
+│   │   ├── config.py          # LLM configuration
+│   │   └── prompt_loader.py   # YAML prompt loader
+│   └── requirements.txt
+│
+├── service/                     # Backend API Layer
+│   ├── src/
+│   │   ├── api.py             # FastAPI endpoints
+│   │   └── main.py            # Application entry
+│   └── requirements.txt
+│
+├── client/                      # Frontend Layer
+│   ├── app.py                  # Streamlit dashboard
+│   ├── public/                 # Static assets
+│   └── README.md               # Client documentation
+│
+├── scripts/                     # Utility scripts
+│   ├── start_server_new.sh    # Start FastAPI backend
+│   └── start_streamlit.sh     # Start Streamlit frontend
+│
+├── docs/                        # Documentation
+└── requirements.txt             # Main dependencies
 ```
 
----
+## 🚀 Quick Start
 
-## Dockerfile
+### Prerequisites
 
-```dockerfile
-FROM mcr.microsoft.com/playwright/python:v1.40.0-jammy
+- Python 3.10+
+- Groq API Key ([Get one here](https://console.groq.com))
 
-WORKDIR /app
+### Installation
 
-# Install Poetry
-RUN pip install --no-cache-dir poetry
+1. **Clone the repository:**
 
-# Copy dependency files
-COPY pyproject.toml poetry.lock* /app/
+   ```bash
+   git clone <your-repo-url>
+   cd Interview-Agent
+   ```
 
-# Configure Poetry
-RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi
+2. **Create virtual environment:**
 
-# Copy source code
-COPY ./src /app/src
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-CMD ["python", "-m", "src.main"]
+3. **Install dependencies:**
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Configure environment:**
+   ```bash
+   cp .env.example .env
+   # Edit .env and add your GROQ_API_KEY
+   ```
+
+### Running the Application
+
+#### Option 1: Full Stack (Recommended)
+
+**Terminal 1 - Backend API:**
+
+```bash
+./scripts/start_server_new.sh
 ```
 
----
+**Terminal 2 - Streamlit Dashboard:**
 
-## docker-compose.yml
+```bash
+./scripts/start_streamlit.sh
+```
+
+Then open:
+
+- **Dashboard**: http://localhost:8501
+- **API Docs**: http://localhost:8000/docs
+
+#### Option 2: API Only
+
+```bash
+./scripts/start_server_new.sh
+```
+
+Access API at: http://localhost:8000
+
+## 🎨 Using the Dashboard
+
+1. **Fill in the sidebar:**
+
+   - Job Description
+   - Your CV/Resume
+   - Company Name
+   - Company Website
+
+2. **Configure settings:**
+
+   - Interview Tone (Friendly/Strict)
+   - Experience Level (Junior/Mid/Senior)
+
+3. **Start Analysis:**
+
+   - Click "🚀 Start Interview Analysis"
+   - Watch AI agents process your data
+
+4. **Explore Results:**
+   - **Strategy Tab**: Preparation roadmap and key points
+   - **Technical Tab**: Technical questions with difficulty levels
+   - **Behavioral Tab**: STAR framework guidance
+   - **Company Fit Tab**: Company-specific questions
+
+## 🏗️ Architecture
+
+### Data Flow
+
+```
+Streamlit UI (client/app.py)
+    ↓ HTTP POST
+FastAPI Backend (service/src/api.py)
+    ↓
+CrewAI Orchestration (ai/src/crews/)
+    ↓
+AI Agents (ai/src/agents/)
+    ↓ Execute
+Tasks (ai/src/tasks/)
+    ↓ Use
+Prompts (ai/prompts/*.yaml)
+    ↓ Call
+Groq LLM API
+    ↓
+Structured JSON Output (ai/src/models/)
+```
+
+### Key Components
+
+#### 1. **AI Layer** (`ai/`)
+
+- **Agents**: JD Analyst, Corporate Researcher, Lead Interviewer
+- **Tasks**: Job analysis, company research, dossier preparation
+- **Prompts**: YAML-based configurations for maintainability
+- **Models**: Pydantic schemas for type-safe outputs
+
+#### 2. **Service Layer** (`service/`)
+
+- **FastAPI**: RESTful API with streaming support
+- **Endpoints**: `/api/prepare`, `/api/prepare-stream`, `/api/health`
+- **CORS**: Enabled for frontend integration
+
+#### 3. **Client Layer** (`client/`)
+
+- **Streamlit**: Interactive web dashboard
+- **Custom CSS**: Professional, modern design
+- **Session State**: Persistent data across interactions
+
+## 🔧 Configuration
+
+### Environment Variables
+
+Create a `.env` file:
+
+```bash
+# Groq API Configuration
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_MODEL_NAME=llama-3.3-70b-versatile
+
+# Optional: Logging
+LOG_LEVEL=INFO
+```
+
+### Prompt Customization
+
+Edit YAML files in `ai/prompts/`:
+
+**Agents** (`ai/prompts/agents/*.yaml`):
 
 ```yaml
-version: "3.9"
-
-services:
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    healthcheck:
-      test: ["CMD", "ollama", "list"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - capabilities: [gpu]
-
-  app:
-    build: .
-    volumes:
-      - ./src:/app/src
-    environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
-    depends_on:
-      ollama:
-        condition: service_healthy
-
-volumes:
-  ollama_data:
+role: "Senior Technical Recruiter"
+goal: "Analyze job descriptions..."
+backstory: "You are an expert..."
+settings:
+  verbose: true
+  allow_delegation: false
 ```
+
+**Tasks** (`ai/prompts/tasks/*.yaml`):
+
+```yaml
+name: "analyze_job_description"
+description_template: "Analyze {job_description}..."
+output_schema:
+  type: "object"
+  properties: { ... }
+```
+
+## 📚 API Documentation
+
+### Endpoints
+
+#### `POST /api/prepare`
+
+Synchronous interview preparation.
+
+**Request:**
+
+```json
+{
+  "job_description": "string",
+  "user_cv": "string",
+  "company_name": "string",
+  "company_website": "string",
+  "tone": "friendly",
+  "level": "mid",
+  "interview_type": "mixed"
+}
+```
+
+**Response:**
+
+```json
+{
+  "status": "success",
+  "result": {
+    "technical_questions": [...],
+    "behavioral_questions": [...],
+    "company_specific_questions": [...],
+    "interview_strategy": {...}
+  }
+}
+```
+
+#### `POST /api/prepare-stream`
+
+Streaming interview preparation with real-time updates.
+
+#### `GET /api/health`
+
+Health check endpoint.
+
+## 🧪 Testing
+
+```bash
+# Test backend API
+curl http://localhost:8000/api/health
+
+# Test with sample data
+curl -X POST http://localhost:8000/api/prepare \
+  -H "Content-Type: application/json" \
+  -d @sample_request.json
+```
+
+## 📖 Documentation
+
+- **AI Layer**: See `ai/prompts/README.md`
+- **Client Layer**: See `client/README.md`
+- **Groq Migration**: See `docs/GROQ_MIGRATION.md`
+- **Structure Overview**: See `docs/STRUCTURE_OVERVIEW.md`
+
+## 🛠️ Development
+
+### Adding New Features
+
+1. **New Agent**: Create YAML in `ai/prompts/agents/`
+2. **New Task**: Create YAML in `ai/prompts/tasks/`
+3. **New Endpoint**: Add to `service/src/api.py`
+4. **UI Update**: Modify `client/app.py`
+
+### Code Style
+
+- **Python**: Follow PEP 8
+- **YAML**: Use 2-space indentation
+- **Prompts**: Keep clear and specific
+
+## 🐛 Troubleshooting
+
+### Backend won't start
+
+```bash
+# Check Python version
+python --version  # Should be 3.10+
+
+# Reinstall dependencies
+pip install -r requirements.txt
+
+# Check Groq API key
+echo $GROQ_API_KEY
+```
+
+### Streamlit errors
+
+```bash
+# Reinstall Streamlit
+pip install --upgrade streamlit
+
+# Clear cache
+streamlit cache clear
+```
+
+### API connection errors
+
+```bash
+# Verify backend is running
+curl http://localhost:8000/api/health
+
+# Check logs
+tail -f logs/api.log
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## 📝 License
+
+[Your License Here]
+
+## 🙏 Acknowledgments
+
+- **CrewAI**: Multi-agent orchestration
+- **Groq**: Fast LLM inference
+- **Streamlit**: Beautiful web dashboards
+- **FastAPI**: Modern Python web framework
+
+## 📧 Support
+
+For issues or questions:
+
+- Check the documentation in `docs/`
+- Review `client/README.md` for UI help
+- Check API docs at http://localhost:8000/docs
 
 ---
 
-## src/models/schemas.py
-
-```python
-from typing import List
-from pydantic import BaseModel, Field
-
-
-class JobDescriptionAnalysis(BaseModel):
-    skills: List[str] = Field(..., description="Key technical and soft skills")
-    keywords: List[str] = Field(..., description="Important keywords from JD")
-    experience_years: int = Field(..., description="Required years of experience")
-
-
-class CompanyCultureProfile(BaseModel):
-    values: List[str] = Field(..., description="Company core values")
-    mission: str = Field(..., description="Company mission statement")
-
-
-class InterviewDossier(BaseModel):
-    questions: List[str] = Field(..., description="Interview questions")
-    strategy: str = Field(..., description="Interview strategy and focus areas")
-```
-
----
-
-## src/tools/scraper.py
-
-```python
-from playwright.sync_api import sync_playwright
-
-
-class WebsiteScraper:
-    """
-    Simple Playwright-based scraper tool.
-    Used by CrewAI agents to fetch raw text from a webpage.
-    """
-
-    def scrape_text(self, url: str) -> str:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-            page.goto(url, timeout=60000)
-            content = page.inner_text("body")
-            browser.close()
-        return content
-```
-
----
-
-## src/config.py
-
-```python
-import os
-from pydantic import BaseSettings
-
-
-class Settings(BaseSettings):
-    """
-    Centralized configuration.
-
-    Docker networking note:
-    Inside docker-compose, the app talks to Ollama via
-    http://ollama:11434 (service name = hostname).
-    """
-
-    ollama_base_url: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-    llm_model: str = os.getenv("LLM_MODEL", "llama3")
-
-    class Config:
-        env_file = ".env"
-```
-
----
-
-## .env.example
-
-```env
-OLLAMA_BASE_URL=http://ollama:11434
-LLM_MODEL=llama3
-```
-
----
-
-## pyproject.toml
-
-```toml
-[tool.poetry]
-name = "ai-mock-interviewer"
-version = "0.1.0"
-description = "AI Mock Interview Agent using CrewAI"
-authors = ["Your Name"]
-
-[tool.poetry.dependencies]
-python = "^3.10"
-crewai = "*"
-langchain = "*"
-pydantic = "*"
-playwright = "*"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-```
+**Built with ❤️ using CrewAI, Groq, Streamlit, and FastAPI**

@@ -6,8 +6,8 @@ This module initializes the CrewAI system and orchestrates the interview prepara
 
 import logging
 import sys
-from .config import Settings
-from .crews import InterviewPreparationCrew, prepare_for_interview
+from ai.src.config import Settings
+from ai.src.crews import InterviewPreparationCrew, prepare_for_interview
 
 # Configure logging
 logging.basicConfig(

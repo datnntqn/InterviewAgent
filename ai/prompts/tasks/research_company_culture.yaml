@@ -1,0 +1,88 @@
+# Company Culture Research Task
+
+name: "research_company_culture"
+description_template: |
+  Research the company culture for: {company_name}
+
+  **Company Website:** {company_website}
+
+  --------------------------------------------------
+  CRITICAL OUTPUT INSTRUCTIONS:
+  1. You MUST return a VALID JSON object.
+  2. Do NOT wrap the output in markdown code blocks (like ```json ... ```).
+  3. Do NOT include any conversational text, headers, or footers. Just the JSON string.
+  4. Ensure all lists are actual JSON arrays.
+
+  Research Steps:
+  1. Use the Website Scraper tool to extract content from the company website
+  2. Focus on 'About Us', 'Our Values', 'Mission', and 'Culture' pages
+  3. Identify the company's core values and mission statement
+  4. Look for information about recent projects, initiatives, or achievements
+  5. Understand the company's work culture and environment
+
+  Return the following JSON structure:
+  {{
+    "company_name": "{company_name}",
+    "mission_statement": "The company's mission statement",
+    "core_values": ["value1", "value2", "value3"],
+    "work_culture": "Description of work culture and environment",
+    "recent_initiatives": [
+        "Recent project or initiative 1",
+        "Recent project or initiative 2"
+    ],
+    "culture_fit_tips": [
+        "Tip for demonstrating culture fit 1",
+        "Tip for demonstrating culture fit 2"
+    ],
+    "key_themes": ["theme1", "theme2", "theme3"]
+  }}
+
+expected_output: |
+  A strict JSON object containing company culture research.
+  Keys: company_name, mission_statement, core_values, work_culture,
+  recent_initiatives, culture_fit_tips, key_themes.
+
+output_schema:
+  type: "object"
+  properties:
+    company_name:
+      type: "string"
+      description: "Name of the company"
+
+    mission_statement:
+      type: "string"
+      description: "The company's mission statement"
+
+    core_values:
+      type: "array"
+      items:
+        type: "string"
+      description: "List of company's core values"
+
+    work_culture:
+      type: "string"
+      description: "Description of the work culture and environment"
+
+    recent_initiatives:
+      type: "array"
+      items:
+        type: "string"
+      description: "Recent projects, initiatives, or achievements"
+
+    culture_fit_tips:
+      type: "array"
+      items:
+        type: "string"
+      description: "Tips for demonstrating culture fit in interview"
+
+    key_themes:
+      type: "array"
+      items:
+        type: "string"
+      description: "Key cultural themes identified"
+
+settings:
+  output_json: dict
+  context_dependencies: []
+  tools_required:
+    - "website_scraper"

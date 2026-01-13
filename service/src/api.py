@@ -11,15 +11,19 @@ from pydantic import BaseModel
 from typing import Optional, Dict, List
 import asyncio
 import json
-from .crews import InterviewPreparationCrew
-from .agents import InterviewAgents
-from .tasks import InterviewTasks
+from ai.src.crews import InterviewPreparationCrew
+from ai.src.agents import InterviewAgents
+from ai.src.tasks import InterviewTasks
 from crewai import Crew, Process
 import logging
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Suppress LiteLLM warnings about optional dependencies
+logging.getLogger("LiteLLM").setLevel(logging.CRITICAL)
+logging.getLogger("litellm").setLevel(logging.CRITICAL)
 
 app = FastAPI(title="AI Mock Interview Agent API")
 

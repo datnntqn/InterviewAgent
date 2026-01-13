@@ -1,0 +1,100 @@
+# Job Description Analysis Task
+
+name: "analyze_job_description"
+description_template: |
+  Analyze the following job description and compare it with the candidate's CV.
+
+  **Job Description:**
+  {job_description}
+
+  **Candidate CV:**
+  {user_cv}
+
+  --------------------------------------------------
+  CRITICAL OUTPUT INSTRUCTIONS:
+  1. You MUST return a VALID JSON object.
+  2. Do NOT wrap the output in markdown code blocks (like ```json ... ```).
+  3. Do NOT include any conversational text, headers, or footers. Just the JSON string.
+  4. Ensure all lists are actual JSON arrays.
+  5. Do NOT include meta-statements like 'Thought: I now can give a great answer'.
+
+  Analyze the data deeply and fill the following JSON structure:
+  {{
+    "technical_skills": ["list", "of", "required", "skills"],
+    "soft_skills": ["list", "of", "soft", "skills"],
+    "experience_required": "Extract years as string, e.g., '5+ years'",
+    "skill_classification": {{
+        "must_have": ["critical", "skills"],
+        "nice_to_have": ["bonus", "skills"]
+    }},
+    "skill_gaps": ["list", "of", "missing", "skills"],
+    "candidate_strengths": ["list", "of", "matching", "strengths"],
+    "recommendations": ["actionable", "advice", "for", "candidate"],
+    "match_percentage": 85
+  }}
+
+  Note: match_percentage should be an integer from 0-100 based on skill match analysis.
+
+expected_output: |
+  A strict JSON object containing the job analysis.
+  Keys: technical_skills, soft_skills, experience_required, skill_classification,
+  skill_gaps, candidate_strengths, recommendations, match_percentage.
+
+output_schema:
+  type: "object"
+  properties:
+    technical_skills:
+      type: "array"
+      items:
+        type: "string"
+      description: "List of technical skills required for the job"
+
+    soft_skills:
+      type: "array"
+      items:
+        type: "string"
+      description: "List of soft skills and behavioral requirements"
+
+    experience_required:
+      type: "string"
+      description: "Years of experience required (e.g., '5+ years')"
+
+    skill_classification:
+      type: "object"
+      properties:
+        must_have:
+          type: "array"
+          items:
+            type: "string"
+        nice_to_have:
+          type: "array"
+          items:
+            type: "string"
+
+    skill_gaps:
+      type: "array"
+      items:
+        type: "string"
+      description: "Skills the candidate is missing"
+
+    candidate_strengths:
+      type: "array"
+      items:
+        type: "string"
+      description: "Skills where the candidate excels"
+
+    recommendations:
+      type: "array"
+      items:
+        type: "string"
+      description: "Actionable recommendations for interview prep"
+
+    match_percentage:
+      type: "integer"
+      minimum: 0
+      maximum: 100
+      description: "Overall match score"
+
+settings:
+  output_json: dict # Use dict instead of boolean for CrewAI compatibility
+  context_dependencies: []

@@ -5,23 +5,28 @@ This module defines the tasks that agents will execute:
 1. Analyze job description
 2. Research company culture
 3. Prepare interview dossier
+
+All tasks are configured to return strict JSON output.
+Task configurations are loaded from YAML files for better maintainability.
 """
 
 from crewai import Task
 from typing import List
-from ..models.schemas import JobDescriptionAnalysis, CompanyCultureProfile, InterviewDossier
+from ..prompt_loader import get_prompt_loader
+from ..models import JobAnalysisOutput, CompanyCultureOutput, InterviewDossierOutput
 
 
 class InterviewTasks:
     """
     Factory class for creating interview preparation tasks.
     
-    Tasks define what agents should do and what output is expected.
+    All tasks are configured to return structured JSON output.
+    Configurations are loaded from YAML files in ai/prompts/tasks/
     """
     
     def __init__(self):
         """Initialize the InterviewTasks factory."""
-        pass
+        self.prompt_loader = get_prompt_loader()
     
     def analyze_job_description(
         self,
@@ -30,10 +35,9 @@ class InterviewTasks:
         user_cv: str
     ) -> Task:
         """
-        Create a task to analyze the job description.
+        Create a task to analyze the job description with JSON output.
         
-        This task extracts technical skills, experience requirements,
-        and identifies gaps between the user's CV and job requirements.
+        Configuration is loaded from ai/prompts/tasks/analyze_job_description.yaml
         
         Args:
             agent: The JD Analyst agent
@@ -43,47 +47,21 @@ class InterviewTasks:
         Returns:
             Task: The job description analysis task
         """
+        # Load configuration from YAML
+        config = self.prompt_loader.load_task_config('analyze_job_description')
+        
+        # Format description with variables
+        description = self.prompt_loader.format_task_description(
+            'analyze_job_description',
+            job_description=job_description,
+            user_cv=user_cv
+        )
+        
         return Task(
-            description=(
-                f"Analyze the following job description and compare it with the candidate's CV.\n\n"
-                f"**Job Description:**\n{job_description}\n\n"
-                f"**Candidate CV:**\n{user_cv}\n\n"
-                f"CRITICAL INSTRUCTIONS:\n"
-                f"- You MUST provide a COMPLETE analysis in your Final Answer\n"
-                f"- DO NOT just say 'I can give a great answer' or 'Thought: ...'\n"
-                f"- PROVIDE the actual detailed analysis with all sections filled out\n"
-                f"- Your Final Answer should be the complete analysis, not a meta-statement\n\n"
-                f"Your analysis MUST include:\n"
-                f"1. Extract all technical skills mentioned (programming languages, frameworks, tools)\n"
-                f"2. Identify soft skills and behavioral requirements\n"
-                f"3. Determine the required years of experience\n"
-                f"4. Distinguish between 'must-have' and 'nice-to-have' qualifications\n"
-                f"5. Identify skill gaps between the CV and job requirements\n"
-                f"6. Highlight the candidate's strengths that match the job\n\n"
-                f"Be thorough and analytical. Focus on actionable insights.\n\n"
-                f"FORMAT YOUR FINAL ANSWER EXACTLY LIKE THIS:\n\n"
-                f"TECHNICAL SKILLS REQUIRED:\n"
-                f"- [list each skill]\n\n"
-                f"SOFT SKILLS:\n"
-                f"- [list each skill]\n\n"
-                f"EXPERIENCE REQUIRED: [X years]\n\n"
-                f"SKILL GAPS:\n"
-                f"- [list gaps]\n\n"
-                f"CANDIDATE STRENGTHS:\n"
-                f"- [list strengths]\n\n"
-                f"RECOMMENDATIONS:\n"
-                f"- [list recommendations]"
-            ),
-            expected_output=(
-                "A COMPLETE detailed analysis with ALL sections filled out:\n"
-                "- Complete list of technical skills required\n"
-                "- Complete list of soft skills and keywords\n"
-                "- Required years of experience\n"
-                "- Detailed skill gaps and strengths\n"
-                "- Specific recommendations for interview preparation\n\n"
-                "NOTE: The output should be the ACTUAL ANALYSIS, not a statement about being able to provide it."
-            ),
-            agent=agent
+            description=description,
+            expected_output=config['expected_output'],
+            agent=agent,
+            output_pydantic=JobAnalysisOutput  # Use Pydantic model for structured output
         )
     
     def research_company_culture(
@@ -93,10 +71,9 @@ class InterviewTasks:
         company_website: str
     ) -> Task:
         """
-        Create a task to research company culture.
+        Create a task to research company culture with JSON output.
         
-        This task scrapes the company website to extract mission,
-        values, and cultural information.
+        Configuration is loaded from ai/prompts/tasks/research_company_culture.yaml
         
         Args:
             agent: The Corporate Researcher agent
@@ -106,35 +83,21 @@ class InterviewTasks:
         Returns:
             Task: The company culture research task
         """
+        # Load configuration from YAML
+        config = self.prompt_loader.load_task_config('research_company_culture')
+        
+        # Format description with variables
+        description = self.prompt_loader.format_task_description(
+            'research_company_culture',
+            company_name=company_name,
+            company_website=company_website
+        )
+        
         return Task(
-            description=(
-                f"Research the company culture for: {company_name}\n\n"
-                f"**Company Website:** {company_website}\n\n"
-                f"Your research should include:\n"
-                f"1. Use the Website Scraper tool to extract content from the company website\n"
-                f"2. Focus on 'About Us', 'Our Values', 'Mission', and 'Culture' pages\n"
-                f"3. Identify the company's core values and mission statement\n"
-                f"4. Look for information about recent projects, initiatives, or achievements\n"
-                f"5. Understand the company's work culture and environment\n"
-                f"6. Note any unique aspects of their organizational culture\n\n"
-                f"Provide insights that will help the candidate understand what the company values "
-                f"and how to demonstrate culture fit during the interview.\n\n"
-                f"Format your response as:\n"
-                f"COMPANY MISSION:\n[mission statement]\n\n"
-                f"CORE VALUES:\n- [list]\n\n"
-                f"WORK CULTURE:\n[description]\n\n"
-                f"RECENT INITIATIVES:\n- [list]\n\n"
-                f"CULTURE FIT TIPS:\n- [list]"
-            ),
-            expected_output=(
-                "A comprehensive company culture profile containing:\n"
-                "- Company mission statement\n"
-                "- List of core values\n"
-                "- Recent projects or initiatives\n"
-                "- Work culture insights\n"
-                "- Tips for demonstrating culture fit"
-            ),
-            agent=agent
+            description=description,
+            expected_output=config['expected_output'],
+            agent=agent,
+            output_pydantic=CompanyCultureOutput  # Use Pydantic model for structured output
         )
     
     def prepare_interview_dossier(
@@ -145,10 +108,9 @@ class InterviewTasks:
         interview_type: str = "technical"
     ) -> Task:
         """
-        Create a task to prepare the interview dossier.
+        Create a task to prepare the interview dossier with JSON output.
         
-        This task synthesizes all information to create tailored
-        interview questions and preparation strategies.
+        Configuration is loaded from ai/prompts/tasks/prepare_interview_dossier.yaml
         
         Args:
             agent: The Lead Interviewer agent
@@ -159,58 +121,22 @@ class InterviewTasks:
         Returns:
             Task: The interview preparation task
         """
+        # Load configuration from YAML
+        config = self.prompt_loader.load_task_config('prepare_interview_dossier')
+        
+        # Format description with variables
+        description = self.prompt_loader.format_task_description(
+            'prepare_interview_dossier',
+            job_analysis=job_analysis,
+            company_culture=company_culture,
+            interview_type=interview_type
+        )
+        
         return Task(
-            description=(
-                f"Create a comprehensive Interview Dossier based on the following information:\n\n"
-                f"**Job Analysis:**\n{job_analysis}\n\n"
-                f"**Company Culture:**\n{company_culture}\n\n"
-                f"**Interview Type:** {interview_type}\n\n"
-                f"Your dossier should include:\n\n"
-                f"**1. Technical Questions (if applicable):**\n"
-                f"   - Create 5-7 technical questions based on required skills\n"
-                f"   - Include questions about specific technologies mentioned in the JD\n"
-                f"   - Range from basic to advanced difficulty\n\n"
-                f"**2. Behavioral Questions (STAR Method):**\n"
-                f"   - Create 5-7 behavioral questions using the STAR framework\n"
-                f"   - Each question should target: Situation, Task, Action, Result\n"
-                f"   - Align questions with company values and culture\n"
-                f"   - Focus on leadership, teamwork, problem-solving, and adaptability\n\n"
-                f"**3. Company-Specific Questions:**\n"
-                f"   - Create 3-5 questions that demonstrate knowledge of the company\n"
-                f"   - Reference their mission, values, or recent projects\n\n"
-                f"**4. Interview Strategy:**\n"
-                f"   - Provide a preparation roadmap\n"
-                f"   - Suggest key talking points\n"
-                f"   - Recommend how to address skill gaps\n"
-                f"   - Tips for demonstrating culture fit\n\n"
-                f"Make the questions realistic and relevant. Ensure STAR method is clearly "
-                f"explained for behavioral questions.\n\n"
-                f"Format your response as:\n\n"
-                f"TECHNICAL QUESTIONS:\n"
-                f"1. [question]\n"
-                f"2. [question]\n\n"
-                f"BEHAVIORAL QUESTIONS (STAR METHOD):\n"
-                f"1. [question]\n"
-                f"   - Situation: [what to address]\n"
-                f"   - Task: [what to address]\n"
-                f"   - Action: [what to address]\n"
-                f"   - Result: [what to address]\n\n"
-                f"COMPANY-SPECIFIC QUESTIONS:\n"
-                f"1. [question]\n\n"
-                f"INTERVIEW STRATEGY:\n"
-                f"- [strategy point]\n"
-                f"- [strategy point]"
-            ),
-            expected_output=(
-                "A complete Interview Dossier containing:\n"
-                "- List of technical interview questions (if applicable)\n"
-                "- List of behavioral questions with STAR framework guidance\n"
-                "- Company-specific questions\n"
-                "- Comprehensive interview preparation strategy\n"
-                "- Key talking points and tips\n"
-                "- Recommendations for addressing weaknesses"
-            ),
-            agent=agent
+            description=description,
+            expected_output=config['expected_output'],
+            agent=agent,
+            output_pydantic=InterviewDossierOutput  # Use Pydantic model for structured output
         )
     
     def get_all_tasks(

@@ -32,6 +32,11 @@ fi
 
 echo "✅ Groq API configuration found"
 
+# Clean Python cache
+echo "🧹 Cleaning Python cache..."
+find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+find . -type f -name "*.pyc" -delete 2>/dev/null || true
+
 # Set Python path to include project root
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 
@@ -50,6 +55,5 @@ echo ""
 echo "Press Ctrl+C to stop the server"
 echo ""
 
-# Start the server
-cd service
-python -m uvicorn src.api:app --reload --host 0.0.0.0 --port 8000
+# Start the server from project root
+python -m uvicorn service.src.api:app --reload --host 0.0.0.0 --port 8000

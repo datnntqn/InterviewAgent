@@ -1,0 +1,155 @@
+# Interview Dossier Preparation Task
+
+name: "prepare_interview_dossier"
+description_template: |
+  Create a comprehensive Interview Dossier based on the following information:
+
+  **Job Analysis:**
+  {job_analysis}
+
+  **Company Culture:**
+  {company_culture}
+
+  **Interview Type:** {interview_type}
+
+  --------------------------------------------------
+  CRITICAL OUTPUT INSTRUCTIONS:
+  1. You MUST return a VALID JSON object.
+  2. Do NOT wrap the output in markdown code blocks (like ```json ... ```).
+  3. Do NOT include any conversational text, headers, or footers. Just the JSON string.
+  4. Ensure all lists are actual JSON arrays.
+  5. Each question object must follow the exact structure shown below.
+
+  Create the following JSON structure:
+  {{
+    "technical_questions": [
+        {{
+            "question": "What is your experience with Python?",
+            "difficulty": "medium",
+            "skills_tested": ["Python", "Programming"]
+        }}
+    ],
+    "behavioral_questions": [
+        {{
+            "question": "Tell me about a time when you faced a challenging deadline",
+            "star_framework": {{
+                "situation": "What to describe about the context",
+                "task": "What was your responsibility",
+                "action": "What actions you took",
+                "result": "What was the outcome"
+            }},
+            "competency_tested": "Time Management"
+        }}
+    ],
+    "company_specific_questions": [
+        {{
+            "question": "How do you align with our value of innovation?",
+            "related_value": "Innovation",
+            "suggested_approach": "Reference specific examples from your experience"
+        }}
+    ],
+    "interview_strategy": {{
+        "preparation_roadmap": ["Step 1", "Step 2", "Step 3"],
+        "key_talking_points": ["Point 1", "Point 2"],
+        "addressing_gaps": ["How to address gap 1", "How to address gap 2"],
+        "culture_fit_approach": ["Tip 1", "Tip 2"]
+    }},
+    "questions_to_ask_interviewer": [
+        "Thoughtful question about the role 1",
+        "Thoughtful question about the company 2"
+    ]
+  }}
+
+  Guidelines:
+  - Create 5-7 technical questions if interview_type includes 'technical'
+  - Create 5-7 behavioral questions using STAR framework
+  - Create 3-5 company-specific questions based on culture research
+  - Provide comprehensive interview strategy
+  - Suggest 3-5 questions for the candidate to ask the interviewer
+
+expected_output: |
+  A strict JSON object containing the complete interview dossier.
+  Keys: technical_questions, behavioral_questions, company_specific_questions,
+  interview_strategy, questions_to_ask_interviewer.
+
+output_schema:
+  type: "object"
+  properties:
+    technical_questions:
+      type: "array"
+      items:
+        type: "object"
+        properties:
+          question:
+            type: "string"
+          difficulty:
+            type: "string"
+            enum: ["easy", "medium", "hard"]
+          skills_tested:
+            type: "array"
+            items:
+              type: "string"
+
+    behavioral_questions:
+      type: "array"
+      items:
+        type: "object"
+        properties:
+          question:
+            type: "string"
+          star_framework:
+            type: "object"
+            properties:
+              situation:
+                type: "string"
+              task:
+                type: "string"
+              action:
+                type: "string"
+              result:
+                type: "string"
+          competency_tested:
+            type: "string"
+
+    company_specific_questions:
+      type: "array"
+      items:
+        type: "object"
+        properties:
+          question:
+            type: "string"
+          related_value:
+            type: "string"
+          suggested_approach:
+            type: "string"
+
+    interview_strategy:
+      type: "object"
+      properties:
+        preparation_roadmap:
+          type: "array"
+          items:
+            type: "string"
+        key_talking_points:
+          type: "array"
+          items:
+            type: "string"
+        addressing_gaps:
+          type: "array"
+          items:
+            type: "string"
+        culture_fit_approach:
+          type: "array"
+          items:
+            type: "string"
+
+    questions_to_ask_interviewer:
+      type: "array"
+      items:
+        type: "string"
+
+settings:
+  output_json: dict
+  context_dependencies:
+    - "analyze_job_description"
+    - "research_company_culture"

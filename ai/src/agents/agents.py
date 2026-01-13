@@ -5,11 +5,14 @@ This module defines the agents responsible for:
 1. Analyzing job descriptions
 2. Researching company culture
 3. Creating interview strategies
+
+Agents are now configured using YAML files for better maintainability.
 """
 
 from crewai import Agent
 from ..config import get_llm
 from ..tools.scraper import WebsiteScraper
+from ..prompt_loader import get_prompt_loader
 
 
 class InterviewAgents:
@@ -17,6 +20,7 @@ class InterviewAgents:
     Factory class for creating interview preparation agents.
     
     Agents are configured based on interview tone and level.
+    Configurations are loaded from YAML files in ai/prompts/agents/
     """
     
     def __init__(self, tone: str = "friendly", level: str = "mid"):
@@ -31,109 +35,80 @@ class InterviewAgents:
         self.level = level.lower()
         
         # Initialize LLM using Groq Cloud API
-        # Temperature 0.7 provides a good balance between creativity and consistency
         self.llm = get_llm(temperature=0.7)
         
         # Initialize tools
         self.scraper = WebsiteScraper()
+        
+        # Initialize prompt loader
+        self.prompt_loader = get_prompt_loader()
     
     def jd_analyst(self) -> Agent:
         """
         Create the Job Description Analyst agent.
         
-        This agent extracts core technical skills, required experience,
-        and identifies gaps between the user's CV and the job description.
+        Configuration is loaded from ai/prompts/agents/jd_analyst.yaml
         
         Returns:
             Agent: The JD Analyst agent
         """
+        # Load configuration from YAML
+        config = self.prompt_loader.load_agent_config('jd_analyst')
+        
         return Agent(
-            role="Senior Technical Recruiter",
-            goal=(
-                "Analyze job descriptions and CVs to provide a COMPLETE, DETAILED analysis. "
-                "You MUST provide the full analysis in your Final Answer, not just say you can give an answer."
-            ),
-            backstory=(
-                "You are an expert at analyzing technical job descriptions. "
-                "You can spot the difference between 'must-have' and 'nice-to-have' skills. "
-                "You are analytical and precise, with years of experience in technical recruitment. "
-                "You understand the nuances of different tech stacks and can accurately assess "
-                "skill requirements across various seniority levels.\n\n"
-                "IMPORTANT: You ALWAYS provide complete, detailed analysis in your Final Answer. "
-                "You NEVER just say 'I can give a great answer' - you actually GIVE the answer with all details."
-            ),
+            role=config['role'],
+            goal=config['goal'],
+            backstory=config['backstory'],
             llm=self.llm,
-            verbose=True,
-            allow_delegation=False
+            verbose=config['settings']['verbose'],
+            allow_delegation=config['settings']['allow_delegation']
         )
     
     def corporate_researcher(self) -> Agent:
         """
         Create the Corporate Researcher agent.
         
-        This agent scrapes company websites to extract mission, values,
-        and recent project details to ensure culture fit.
+        Configuration is loaded from ai/prompts/agents/corporate_researcher.yaml
         
         Returns:
             Agent: The Corporate Researcher agent
         """
+        # Load configuration from YAML
+        config = self.prompt_loader.load_agent_config('corporate_researcher')
+        
         return Agent(
-            role="Company Culture Investigator",
-            goal="Scrape the company website to extract mission, values, and recent project details to ensure culture fit.",
-            backstory=(
-                "You are a detective for corporate identity. "
-                "You find the hidden details in 'About Us' pages that define a company's DNA. "
-                "You excel at reading between the lines to understand what a company truly values. "
-                "Your insights help candidates prepare for culture-fit questions and understand "
-                "the organizational environment they're stepping into."
-            ),
+            role=config['role'],
+            goal=config['goal'],
+            backstory=config['backstory'],
             llm=self.llm,
             tools=[self.scraper],
-            verbose=True,
-            allow_delegation=False
+            verbose=config['settings']['verbose'],
+            allow_delegation=config['settings']['allow_delegation']
         )
     
     def lead_interviewer(self) -> Agent:
         """
         Create the Lead Interviewer (Strategist) agent.
         
-        This agent synthesizes all data to generate a comprehensive
-        Interview Dossier containing tailored questions.
-        
+        Configuration is loaded from ai/prompts/agents/lead_interviewer.yaml
         The backstory adapts based on the interview tone setting.
         
         Returns:
             Agent: The Lead Interviewer agent
         """
-        # Dynamic backstory based on tone
-        if self.tone == "strict":
-            backstory = (
-                "You are a no-nonsense Lead Interview Manager with high standards. "
-                "You believe in rigorous preparation and expect candidates to demonstrate "
-                "deep technical knowledge and clear problem-solving abilities. "
-                "For culture fit questions, you MUST use the STAR method framework "
-                "(Situation, Task, Action, Result) to structure behavioral questions. "
-                "You push candidates to be specific and results-oriented. "
-                "Your questions are challenging but fair, designed to reveal true competency."
-            )
-        else:  # friendly
-            backstory = (
-                "You are a supportive and encouraging Lead Interview Manager. "
-                "You believe in helping candidates showcase their best selves through "
-                "thoughtful preparation and confidence-building. "
-                "For culture fit questions, you MUST use the STAR method framework "
-                "(Situation, Task, Action, Result) to help candidates structure compelling stories. "
-                "You create a warm environment while still ensuring thorough preparation. "
-                "Your questions are designed to help candidates shine while being authentic."
-            )
+        # Load configuration from YAML
+        config = self.prompt_loader.load_agent_config('lead_interviewer')
+        
+        # Get tone-specific backstory
+        backstory = self.prompt_loader.get_agent_backstory('lead_interviewer', tone=self.tone)
         
         return Agent(
-            role="Lead Interview Manager",
-            goal="Synthesize all data to generate a comprehensive Interview Dossier containing tailored questions.",
+            role=config['role'],
+            goal=config['goal'],
             backstory=backstory,
             llm=self.llm,
-            verbose=True,
-            allow_delegation=True  # Can delegate to other agents for additional info
+            verbose=config['settings']['verbose'],
+            allow_delegation=config['settings']['allow_delegation']
         )
     
     def get_all_agents(self) -> dict:
