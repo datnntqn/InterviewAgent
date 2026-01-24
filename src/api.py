@@ -166,19 +166,24 @@ async def prepare_interview(request: InterviewRequest):
     """
     Prepare for an interview (non-streaming version).
     
-    This endpoint runs the full CrewAI workflow and returns final results.
+    Uses rate-limit safe CrewAI with automatic 20s delays between tasks
+    to prevent hitting Groq's TPM limits.
     """
     try:
         logger.info(f"Starting interview preparation for {request.company_name}")
+        logger.info(f"Using model: {request.level} level, {request.tone} tone")
         
-        # Create crew
-        crew = InterviewPreparationCrew(
+        # Use rate-limit safe crew with delays
+        from .crews.rate_limit_safe_crew import RateLimitSafeCrewAI
+        
+        crew = RateLimitSafeCrewAI(
             tone=request.tone,
             level=request.level,
-            verbose=True
+            verbose=True,
+            delay_between_tasks=20.0  # 20 seconds between tasks
         )
         
-        # Run the crew
+        # Run with automatic delays
         result = crew.prepare_interview(
             job_description=request.job_description,
             user_cv=request.user_cv,
@@ -197,7 +202,22 @@ async def prepare_interview(request: InterviewRequest):
         
     except Exception as e:
         logger.error(f"Error during interview preparation: {e}", exc_info=True)
+        
+        # Check if it's a rate limit error
+        error_str = str(e)
+        if "rate_limit" in error_str.lower() or "429" in error_str:
+            raise HTTPException(
+                status_code=429,
+                detail={
+                    "error": "Rate limit exceeded",
+                    "message": "Groq API rate limit reached. Please wait and try again.",
+                    "suggestion": "Try switching to llama-3.1-8b-instant (20k TPM) or gemini-1.5-flash (250k TPM)",
+                    "wait_time": "Please wait 20-30 seconds before retrying"
+                }
+            )
+        
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 if __name__ == "__main__":

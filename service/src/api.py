@@ -16,6 +16,7 @@ from ai.src.agents import InterviewAgents
 from ai.src.tasks import InterviewTasks
 from crewai import Crew, Process
 import logging
+from ai.src.crews.rate_limit_safe_crew import RateLimitSafeCrewAI
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -203,19 +204,22 @@ async def prepare_interview(request: InterviewRequest):
     """
     Prepare for an interview (non-streaming version).
     
-    This endpoint runs the full CrewAI workflow and returns final results.
+    This endpoint runs the full CrewAI workflow with rate limit protection.
+    Uses automatic delays between tasks to prevent hitting Groq's TPM limits.
     """
     try:
         logger.info(f"Starting interview preparation for {request.company_name}")
         
-        # Create crew
-        crew = InterviewPreparationCrew(
+        # Use rate-limit safe crew with delays between tasks
+        
+        crew = RateLimitSafeCrewAI(
             tone=request.tone,
             level=request.level,
-            verbose=True
+            verbose=True,
+            delay_between_tasks=20.0  # 20 seconds between tasks
         )
         
-        # Run the crew
+        # Run the crew with automatic delays
         result = crew.prepare_interview(
             job_description=request.job_description,
             user_cv=request.user_cv,
@@ -244,11 +248,12 @@ async def prepare_interview(request: InterviewRequest):
                     "error": "Rate limit exceeded",
                     "message": "Groq API rate limit reached. Please wait a moment and try again.",
                     "suggestion": "The system uses Groq's free tier which has token limits. Please wait 15-30 seconds before retrying.",
-                    "alternative": "Consider using a smaller model or upgrading your Groq API tier."
+                    "alternative": "Consider switching to llama-3.1-8b-instant model (20k TPM) or Google Gemini (250k TPM)."
                 }
             )
         
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 if __name__ == "__main__":
