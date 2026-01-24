@@ -1,0 +1,95 @@
+@startuml Report_Mode_Sequence
+
+title Report Mode - CrewAI Question Generation Flow
+
+actor User
+participant "Streamlit\nDashboard" as UI
+participant "FastAPI\n/api/prepare" as API
+participant "Interview\nPreparationCrew" as Crew
+participant "JD Analyst\nAgent" as Agent1
+participant "Corporate\nResearcher" as Agent2
+participant "Lead\nInterviewer" as Agent3
+participant "Groq LLM\nAPI" as LLM
+database "Prompts\n(YAML)" as Prompts
+
+== Initialization ==
+User -> UI: Fill form\n(JD, CV, Company)
+User -> UI: Click "Start Analysis"
+UI -> API: POST /api/prepare\n{job_description, user_cv,\ncompany_name, company_website}
+
+== CrewAI Orchestration ==
+API -> Crew: Initialize crew\n(tone, level, verbose)
+activate Crew
+
+Crew -> Prompts: Load agent configs
+Prompts --> Crew: Agent definitions
+
+Crew -> Prompts: Load task configs
+Prompts --> Crew: Task definitions
+
+== Task 1: Job Analysis ==
+Crew -> Agent1: Execute analyze_job_description
+activate Agent1
+
+Agent1 -> Prompts: Load JD Analyst prompt
+Prompts --> Agent1: Prompt template
+
+Agent1 -> LLM: Analyze JD vs CV\n(Groq API call)
+activate LLM
+LLM --> Agent1: Structured response:\n{skill_gaps, matching_skills,\nexperience_level_match}
+deactivate LLM
+
+Agent1 --> Crew: Job analysis complete
+deactivate Agent1
+
+== Task 2: Company Research ==
+Crew -> Agent2: Execute research_company_culture\n(context: job_analysis)
+activate Agent2
+
+Agent2 -> Prompts: Load Researcher prompt
+Prompts --> Agent2: Prompt template
+
+Agent2 -> Agent2: Scrape company website
+note right: Uses ScrapeWebsiteTool
+
+Agent2 -> LLM: Analyze company culture\n(Groq API call)
+activate LLM
+LLM --> Agent2: Structured response:\n{company_values, culture_insights,\nmission_statement}
+deactivate LLM
+
+Agent2 --> Crew: Company research complete
+deactivate Agent2
+
+== Task 3: Interview Dossier ==
+Crew -> Agent3: Execute prepare_interview_dossier\n(context: job_analysis + company_culture)
+activate Agent3
+
+Agent3 -> Prompts: Load Interviewer prompt
+Prompts --> Agent3: Prompt template
+
+Agent3 -> LLM: Generate questions\n(Groq API call)
+activate LLM
+note right of LLM
+  Prompt includes:
+  - Job analysis results
+  - Company culture insights
+  - Interview type (mixed)
+  - Tone & level settings
+end note
+
+LLM --> Agent3: Structured JSON:\n{\n  technical_questions: [...],\n  behavioral_questions: [...],\n  company_specific_questions: [...],\n  interview_strategy: {...}\n}
+deactivate LLM
+
+Agent3 --> Crew: Interview dossier complete
+deactivate Agent3
+
+== Response ==
+Crew --> API: CrewAI result
+deactivate Crew
+
+API --> UI: HTTP 200\n{status: "success",\nresult: {...}}
+
+UI -> UI: Store in session_state
+UI --> User: Display results\n(Strategy, Technical,\nBehavioral, Company tabs)
+
+@enduml

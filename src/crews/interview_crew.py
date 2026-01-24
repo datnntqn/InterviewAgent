@@ -86,7 +86,7 @@ class InterviewPreparationCrew:
             tasks=tasks,
             process=Process.sequential,  # Execute tasks in order
             verbose=self.verbose,
-            memory=True  # Enable memory for better context sharing
+            memory=False  # Disabled to prevent rate limit from token duplication
         )
         
         # Execute the crew

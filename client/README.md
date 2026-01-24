@@ -1,248 +1,205 @@
-# 🎯 AI Interview Coach - Streamlit Dashboard
+# AI Interview Coach - Streamlit Client
 
-A beautiful, interactive web dashboard for AI-powered interview preparation.
+## Tổng Quan
 
-## Features
+Dashboard Streamlit với 2 chế độ:
 
-### 📊 **Interactive Dashboard**
+1. **📋 Report Mode**: Xem tất cả câu hỏi và chiến lược (static)
+2. **🎤 Interactive Interview**: Phỏng vấn thực tế với đánh giá real-time
 
-- Clean, modern UI with custom CSS styling
-- Organized into 4 main tabs for easy navigation
-- Real-time processing status updates
-- Session state management for persistent data
+## Cài Đặt
 
-### 🎯 **Strategy & Roadmap Tab**
+```bash
+# Install dependencies
+pip install streamlit requests
 
-- **Interactive Checklist**: Mark off preparation tasks as you complete them
-- **Key Talking Points**: Highlighted points to emphasize in your interview
-- **Skill Gaps**: Warning boxes showing areas that need improvement
-
-### 💻 **Technical Questions Tab**
-
-- **Visual Question Cards**: Each question in a styled container
-- **Difficulty Badges**: Color-coded (Green=Easy, Yellow=Medium, Red=Hard)
-- **Skill Tags**: Pill-shaped badges showing skills being tested
-- **Answer Notes**: Text areas to practice your responses
-
-### 🤝 **Behavioral Questions Tab**
-
-- **STAR Framework Guide**: Structured guidance for each question
-  - 🏠 **Situation**: Context setting
-  - 📋 **Task**: Your responsibility
-  - 🎬 **Action**: What you did (highlighted as most important)
-  - 🏆 **Result**: The outcome
-- **Expandable Cards**: Click to reveal detailed STAR guidance
-- **Practice Areas**: Write and refine your STAR answers
-
-### 🏢 **Company Fit Tab**
-
-- **Company-Specific Questions**: Tailored to the company's values
-- **Suggested Approaches**: Tips on how to answer each question
-- **Questions to Ask**: Thoughtful questions to ask the interviewer
-
-## Installation
-
-### Prerequisites
-
-- Python 3.10+
-- Backend API running on `http://localhost:8000`
-
-### Quick Start
-
-1. **Install dependencies:**
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Start the backend API** (in a separate terminal):
-
-   ```bash
-   ./scripts/start_server_new.sh
-   ```
-
-3. **Launch the Streamlit dashboard:**
-
-   ```bash
-   ./scripts/start_streamlit.sh
-   ```
-
-   Or manually:
-
-   ```bash
-   streamlit run app.py
-   ```
-
-4. **Open your browser:**
-   - Dashboard: `http://localhost:8501`
-   - Backend API: `http://localhost:8000`
-
-## Usage
-
-### Step 1: Fill in the Sidebar Form
-
-- **Job Description**: Paste the full job posting
-- **Your CV/Resume**: Paste your resume content
-- **Company Name**: e.g., "TechCorp"
-- **Company Website**: e.g., "https://www.techcorp.com"
-
-### Step 2: Configure Settings
-
-- **Interview Tone**: Choose "Friendly" or "Strict"
-- **Experience Level**: Select "Junior", "Mid", or "Senior"
-
-### Step 3: Start Analysis
-
-- Click **"🚀 Start Interview Analysis"**
-- Watch the AI agents work in real-time
-- Wait for the analysis to complete (~30-60 seconds)
-
-### Step 4: Review Your Dashboard
-
-Navigate through the tabs to:
-
-- ✅ Check off preparation tasks
-- 📝 Practice answering questions
-- 💡 Review strategy and talking points
-- 🎯 Prepare company-specific responses
-
-## Architecture
-
-```
-app.py (Streamlit Frontend)
-    ↓
-    HTTP POST to http://localhost:8000/api/prepare
-    ↓
-FastAPI Backend (service/src/api.py)
-    ↓
-CrewAI Agents (ai/src/)
-    ↓
-Groq LLM (Cloud API)
+# Or from requirements.txt
+pip install -r requirements.txt
 ```
 
-## Custom Styling
+## Chạy Ứng Dụng
 
-The dashboard uses custom CSS for:
+```bash
+# Start backend first
+./scripts/start_server_new.sh
 
-- **Skill Badges**: Blue pill-shaped tags
-- **Difficulty Badges**: Color-coded (Green/Yellow/Red)
-- **Question Cards**: Styled containers with left border
-- **STAR Items**: Highlighted framework sections
-- **Talking Points**: Red-accented boxes
-- **Roadmap Items**: Green-accented checkboxes
+# Then start Streamlit (in another terminal)
+./scripts/start_streamlit.sh
+```
+
+## Sử Dụng
+
+### Bước 1: Chuẩn Bị Interview
+
+1. Điền thông tin vào sidebar:
+   - Job Description
+   - Your CV
+   - Company Name
+   - Company Website
+   - Tone (Friendly/Strict)
+   - Level (Junior/Mid/Senior)
+
+2. Click **"🚀 Start Interview Analysis"**
+
+3. Đợi CrewAI phân tích (30-60 giây)
+
+### Bước 2: Chọn Mode
+
+#### 📋 Report Mode
+
+- Xem tất cả câu hỏi được tạo
+- Review chiến lược phỏng vấn
+- Ghi chú câu trả lời
+- Không có đánh giá real-time
+
+#### 🎤 Interactive Interview Mode
+
+- Phỏng vấn từng câu một
+- Trả lời và nhận feedback ngay lập tức
+- Xem điểm số cho mỗi câu trả lời
+- Nhận tổng kết cuối cùng
+
+### Interactive Mode Workflow
+
+```
+1. Click "🎬 Start Interactive Interview"
+   ↓
+2. Đọc câu hỏi
+   ↓
+3. Nhập câu trả lời
+   ↓
+4. Click "📤 Submit Answer"
+   ↓
+5. Xem feedback và điểm số
+   ↓
+6. Tiếp tục với câu hỏi tiếp theo
+   ↓
+7. Xem tổng kết cuối cùng
+```
+
+## Tính Năng
+
+### Report Mode
+
+- ✅ Chiến lược phỏng vấn
+- ✅ Roadmap chuẩn bị
+- ✅ Key talking points
+- ✅ Câu hỏi technical
+- ✅ Câu hỏi behavioral (STAR)
+- ✅ Câu hỏi về công ty
+
+### Interactive Mode
+
+- ✅ Q&A real-time
+- ✅ Đánh giá tức thì (LLM-powered)
+- ✅ Điểm số 0-10 cho mỗi câu
+- ✅ Feedback chi tiết
+- ✅ Strengths & improvements
+- ✅ Progress tracking
+- ✅ Interview history
+- ✅ Final summary
+
+## Cấu Trúc File
+
+```
+client/
+├── app.py                  # Main Streamlit app
+├── interactive_mode.py     # Interactive interview component
+├── config.py              # Configuration & mock data
+├── styles.py              # CSS styles
+├── utils.py               # Utility functions
+└── README.md              # This file
+```
 
 ## Session State
 
-The app uses Streamlit's session state to persist:
+Streamlit sử dụng session state để lưu:
 
-- Analysis results across interactions
-- Roadmap checkbox states
-- User's answer notes
+- `analysis_result`: Kết quả từ CrewAI
+- `interview_thread_id`: LangGraph session ID
+- `interview_active`: Trạng thái phỏng vấn
+- `current_question`: Câu hỏi hiện tại
+- `interview_progress`: Tiến độ (current/total)
+- `interview_history`: Lịch sử Q&A
 
 ## API Integration
 
-### Endpoint
+### CrewAI (Report Generation)
 
-```
-POST http://localhost:8000/api/prepare
-```
-
-### Request Payload
-
-```json
-{
-  "job_description": "string",
-  "user_cv": "string",
-  "company_name": "string",
-  "company_website": "string",
-  "tone": "friendly" | "strict",
-  "level": "junior" | "mid" | "senior",
-  "interview_type": "mixed"
-}
+```python
+POST /api/prepare
+→ Returns: technical_questions, behavioral_questions, strategy
 ```
 
-### Response Format
+### LangGraph (Interactive Interview)
 
-```json
-{
-  "status": "success",
-  "result": {
-    "technical_questions": [...],
-    "behavioral_questions": [...],
-    "company_specific_questions": [...],
-    "interview_strategy": {...},
-    "questions_to_ask_interviewer": [...]
-  }
-}
+```python
+# Start
+POST /api/interview/start
+→ Returns: thread_id, first_question
+
+# Submit answer
+POST /api/interview/chat/{thread_id}
+→ Returns: feedback, next_question, progress
+
+# Get summary
+GET /api/interview/summary/{thread_id}
+→ Returns: overall_score, strengths, improvements
 ```
 
 ## Troubleshooting
 
-### Backend Not Running
+### "Connection refused"
 
-```
-⚠️ Backend API is not running!
-```
+- Backend chưa chạy
+- Run: `./scripts/start_server_new.sh`
 
-**Solution**: Start the backend with `./scripts/start_server_new.sh`
+### "Please run interview preparation first"
 
-### API Connection Error
+- Chưa generate questions
+- Click "🚀 Start Interview Analysis" trong sidebar
 
-```
-API Error: Connection refused
-```
+### Interactive mode không hiển thị
 
-**Solution**: Ensure backend is running on port 8000
+- Chưa có `analysis_result`
+- Chạy Report Mode trước
 
-### Missing Dependencies
+### Session expired
 
-```
-ModuleNotFoundError: No module named 'streamlit'
-```
+- Server restart sẽ xóa sessions
+- Start lại interview
 
-**Solution**: Run `pip install -r requirements.txt`
+## Tips
 
-## Development
+1. **Mock Data**: Click "📝 Fill Mock Data" để test nhanh
+2. **Progress**: Theo dõi progress bar trong Interactive Mode
+3. **History**: Xem lại tất cả câu hỏi và feedback
+4. **End Early**: Click "🛑 End Interview" nếu muốn dừng sớm
 
-### Adding New Features
+## Screenshots
 
-1. **New Tab**: Add to the `st.tabs()` list and create a render function
-2. **Custom Styling**: Update the `local_css()` function
-3. **New API Fields**: Update the `call_backend_api()` function
+### Report Mode
 
-### File Structure
+- Tabs: Strategy, Technical, Behavioral, Company Fit
+- Static view của tất cả câu hỏi
 
-```
-app.py                      # Main Streamlit application
-scripts/start_streamlit.sh  # Launcher script
-requirements.txt            # Python dependencies
-```
+### Interactive Mode
 
-## Tips for Best Results
+- Progress bar
+- Current question
+- Answer input
+- Real-time feedback
+- Interview history
+- Final summary
 
-1. **Detailed Job Description**: Include all requirements and responsibilities
-2. **Complete CV**: Provide comprehensive experience and skills
-3. **Accurate Company Info**: Use the official company website
-4. **Practice Regularly**: Use the answer notes to refine responses
-5. **Check Off Tasks**: Use the roadmap to track your preparation
+## Next Steps
 
-## Future Enhancements
-
-- [ ] PDF upload for CV
-- [ ] Export dashboard as PDF report
-- [ ] Mock interview recording
-- [ ] Progress tracking over time
+- [ ] Add voice input/output
+- [ ] Save interview sessions
+- [ ] Export results to PDF
 - [ ] Multi-language support
-- [ ] Interview scheduling integration
-
-## Support
-
-For issues or questions:
-
-1. Check the backend logs: `./scripts/start_server_new.sh`
-2. Check Streamlit logs in the terminal
-3. Verify API health: `curl http://localhost:8000/api/health`
+- [ ] Video interview simulation
 
 ---
 
-**Built with ❤️ using Streamlit, FastAPI, CrewAI, and Groq LLM**
+**Enjoy your AI-powered interview preparation!** 🚀

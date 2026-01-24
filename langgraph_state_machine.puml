@@ -1,0 +1,117 @@
+@startuml LangGraph_State_Machine
+
+title LangGraph State Machine - Interactive Interview
+
+[*] --> InitialState : POST /api/interview/start
+
+state "Initial State" as InitialState {
+    state "Parse CrewAI Questions" as Parse
+    state "Create InterviewState" as CreateState
+    
+    Parse --> CreateState
+    CreateState : questions = parsed_questions
+    CreateState : current_index = 0
+    CreateState : chat_history = []
+    CreateState : scores = []
+    CreateState : awaiting_user_input = False
+}
+
+InitialState --> AskQuestion : Initialize Graph
+
+state "Ask Question Node" as AskQuestion {
+    state "Get Current Question" as GetQ
+    state "Create AI Message" as CreateMsg
+    state "Update State" as UpdateAsk
+    
+    GetQ --> CreateMsg : questions[current_index]
+    CreateMsg --> UpdateAsk
+    UpdateAsk : chat_history.append(AIMessage)
+    UpdateAsk : awaiting_user_input = True
+}
+
+AskQuestion --> WaitingForUser : Graph.END (Pause)
+
+state "Waiting for User Input" as WaitingForUser {
+    WaitingForUser : State persisted in MemorySaver
+    WaitingForUser : Thread ID: uuid
+    WaitingForUser : awaiting_user_input = True
+}
+
+WaitingForUser --> EvaluateAnswer : POST /api/interview/chat\n{answer}
+
+state "Evaluate Answer Node" as EvaluateAnswer {
+    state "Add User Message" as AddMsg
+    state "Determine Question Type" as DetermineType
+    state "Call LLM for Evaluation" as CallLLM
+    state "Update Scores" as UpdateScores
+    
+    AddMsg --> DetermineType : chat_history.append(HumanMessage)
+    
+    state DetermineType <<choice>>
+    DetermineType --> CallLLM : Technical
+    DetermineType --> CallLLM : Behavioral
+    
+    CallLLM --> UpdateScores : {score, feedback, strengths, improvements}
+    UpdateScores : scores.append(score_entry)
+    UpdateScores : current_index++
+}
+
+EvaluateAnswer --> DetermineNext : Evaluation Complete
+
+state "Determine Next Step" as DetermineNext <<choice>>
+
+DetermineNext --> AskQuestion : current_index < len(questions)\n[More Questions]
+DetermineNext --> GenerateSummary : current_index >= len(questions)\n[All Done]
+
+state "Generate Summary Node" as GenerateSummary {
+    state "Calculate Averages" as CalcAvg
+    state "Call LLM for Summary" as SummaryLLM
+    state "Update Final State" as UpdateFinal
+    
+    CalcAvg --> SummaryLLM
+    CalcAvg : technical_avg = avg(technical_scores)
+    CalcAvg : behavioral_avg = avg(behavioral_scores)
+    CalcAvg : overall_avg = avg(all_scores)
+    
+    SummaryLLM --> UpdateFinal : {overall_score, strengths,\nareas_for_improvement,\nrecommendations}
+    UpdateFinal : final_summary = summary
+    UpdateFinal : interview_complete = True
+}
+
+GenerateSummary --> [*] : Interview Complete
+
+note right of WaitingForUser
+  **State Persistence:**
+  - Stored in MemorySaver
+  - Retrieved by thread_id
+  - Survives across API calls
+  - Enables human-in-the-loop
+end note
+
+note right of EvaluateAnswer
+  **Evaluation Logic:**
+  
+  Technical Questions:
+  - Check technical accuracy
+  - Assess depth of knowledge
+  - Evaluate examples given
+  
+  Behavioral Questions:
+  - STAR framework analysis
+  - Situation clarity
+  - Task understanding
+  - Action specificity
+  - Result measurement
+end note
+
+note bottom of GenerateSummary
+  **Final Summary Includes:**
+  - Overall score (0-10)
+  - Technical average
+  - Behavioral average
+  - Top strengths
+  - Areas for improvement
+  - Actionable recommendations
+end note
+
+@enduml

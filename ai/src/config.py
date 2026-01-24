@@ -10,13 +10,14 @@ class Settings(BaseSettings):
     IMPORTANT: Make sure to update your actual .env file with:
     - GROQ_API_KEY: Your Groq API key from https://console.groq.com/keys
     - GROQ_MODEL_NAME: The model name (default: llama-3.3-70b-versatile)
+    - GROQ_MODEL_NAME: The model name (default: mixtral-8x7b-32768)
     """
 
     groq_api_key: str = Field(
         default_factory=lambda: os.getenv("GROQ_API_KEY", "")
     )
     groq_model_name: str = Field(
-        default_factory=lambda: os.getenv("GROQ_MODEL_NAME", "llama-3.3-70b-versatile")
+        default_factory=lambda: os.getenv("GROQ_MODEL_NAME", "mixtral-8x7b-32768")
     )
 
     class Config:

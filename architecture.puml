@@ -1,0 +1,155 @@
+@startuml AI_Mock_Interview_System_Architecture
+
+!define RECTANGLE class
+
+title AI Mock Interview Agent - System Architecture
+
+' Color definitions
+!define PRIMARY_COLOR #4A90E2
+!define SECONDARY_COLOR #50C878
+!define ACCENT_COLOR #FF6B6B
+!define NEUTRAL_COLOR #95A5A6
+
+' ===== Actors =====
+actor User as user
+
+' ===== Frontend Layer =====
+package "Frontend Layer" <<Rectangle>> #LightBlue {
+    component "Streamlit Dashboard\n:8501" as streamlit {
+        component "Report Mode\n(Static View)" as report_mode
+        component "Interactive Mode\n(Real-time Q&A)" as interactive_mode
+    }
+}
+
+' ===== Backend Layer =====
+package "Backend Layer (FastAPI :8000)" <<Rectangle>> #LightGreen {
+    component "API Router" as api_router {
+        component "/api/prepare" as api_prepare
+        component "/api/prepare-stream" as api_stream
+        component "/api/interview/start" as api_start
+        component "/api/interview/chat" as api_chat
+        component "/api/interview/summary" as api_summary
+        component "/api/prepare-and-start" as api_combined
+    }
+}
+
+' ===== AI Processing Layer =====
+package "AI Processing Layer" <<Rectangle>> #LightYellow {
+    
+    ' CrewAI Components
+    package "CrewAI Workflow" <<Rectangle>> #FFEBCD {
+        component "InterviewPreparationCrew" as crew {
+            component "JD Analyst Agent" as agent1
+            component "Corporate Researcher" as agent2
+            component "Lead Interviewer" as agent3
+        }
+        
+        database "Prompts\n(YAML)" as prompts {
+            component "agents/*.yaml" as agent_prompts
+            component "tasks/*.yaml" as task_prompts
+        }
+    }
+    
+    ' LangGraph Components
+    package "LangGraph Workflow" <<Rectangle>> #E6F3FF {
+        component "StateGraph" as langgraph {
+            component "ask_question" as node_ask
+            component "evaluate_answer" as node_eval
+            component "generate_summary" as node_summary
+        }
+        
+        database "State\n(MemorySaver)" as state_db {
+            component "InterviewState" as state
+            component "thread_id" as thread
+        }
+    }
+}
+
+' ===== External Services =====
+cloud "External Services" {
+    component "Groq LLM API\nllama-3.3-70b" as groq
+}
+
+' ===== Data Models =====
+package "Data Models" <<Rectangle>> #FFE6E6 {
+    component "Pydantic Schemas" as schemas {
+        component "TechnicalQuestion" as tech_q
+        component "BehavioralQuestion" as behav_q
+        component "InterviewStrategy" as strategy
+    }
+}
+
+' ===== Connections =====
+
+' User to Frontend
+user --> streamlit : "Access Dashboard"
+
+' Frontend to Backend
+report_mode --> api_prepare : "POST\n{JD, CV, Company}"
+report_mode --> api_stream : "POST (Streaming)"
+interactive_mode --> api_start : "POST\n{crewai_result}"
+interactive_mode --> api_chat : "POST\n{answer}"
+interactive_mode --> api_summary : "GET"
+streamlit --> api_combined : "POST (Combined)"
+
+' Backend to AI Layer
+api_prepare --> crew : "Initialize Crew"
+api_stream --> crew : "Initialize Crew\n(Streaming)"
+api_combined --> crew : "Step 1: Generate Questions"
+
+api_start --> langgraph : "Create Session"
+api_chat --> langgraph : "Resume Graph"
+api_summary --> langgraph : "Get State"
+
+' CrewAI Internal Flow
+crew --> agent1 : "1. Analyze JD vs CV"
+agent1 --> agent2 : "2. Research Company"
+agent2 --> agent3 : "3. Generate Questions"
+agent3 --> schemas : "Structure Output"
+
+prompts --> crew : "Load Prompts"
+
+' LangGraph Internal Flow
+langgraph --> node_ask : "Entry Point"
+node_ask --> node_eval : "User Submits Answer"
+node_eval --> node_ask : "Next Question"
+node_eval --> node_summary : "All Done"
+
+state_db --> langgraph : "Persist State"
+langgraph --> state_db : "Save State"
+
+' AI to External Services
+agent1 --> groq : "LLM Call"
+agent2 --> groq : "LLM Call"
+agent3 --> groq : "LLM Call"
+node_eval --> groq : "Evaluate Answer"
+node_summary --> groq : "Generate Summary"
+
+' Notes
+note right of crew
+  **CrewAI Flow:**
+  1. JD Analyst: Skill gap analysis
+  2. Corporate Researcher: Company culture
+  3. Lead Interviewer: Question generation
+  
+  **Memory:** FALSE (prevent rate limits)
+end note
+
+note right of langgraph
+  **LangGraph Flow:**
+  1. ask_question → END (pause)
+  2. User answers via API
+  3. evaluate_answer → score + feedback
+  4. Conditional: next Q or summary
+  
+  **State:** Persisted by thread_id
+end note
+
+note bottom of groq
+  **Rate Limit Prevention:**
+  - CrewAI memory disabled
+  - No token duplication
+  - ~60% token reduction
+end note
+
+@enduml

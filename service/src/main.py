@@ -16,6 +16,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Import LangGraph router
+try:
+    from .api_langgraph import router as langgraph_router
+    LANGGRAPH_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"LangGraph not available: {e}")
+    LANGGRAPH_AVAILABLE = False
+
 
 def run_example():
     """Run an example interview preparation workflow."""

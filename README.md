@@ -1,52 +1,175 @@
 # 🎯 AI Mock Interview Agent
 
-An intelligent interview preparation system powered by **CrewAI**, **Groq LLM**, and **Streamlit**.
+Hệ thống chuẩn bị phỏng vấn thông minh sử dụng **CrewAI**, **LangGraph**, **Groq LLM**, và **Streamlit**.
 
 ## 🌟 Features
 
-- **AI-Powered Analysis**: Multi-agent system analyzes job descriptions and CVs
-- **Company Research**: Automated company culture and values research
-- **Personalized Questions**: Technical, behavioral, and company-specific questions
-- **STAR Framework**: Structured guidance for behavioral questions
-- **Interactive Dashboard**: Beautiful Streamlit UI for interview preparation
-- **Real-time Processing**: Watch AI agents work in real-time
+### 📋 Report Mode (CrewAI)
+
+- **AI-Powered Analysis**: Multi-agent system phân tích JD và CV
+- **Company Research**: Tự động nghiên cứu văn hóa công ty
+- **Personalized Questions**: Câu hỏi technical, behavioral, company-specific
+- **STAR Framework**: Hướng dẫn chi tiết cho câu hỏi behavioral
+- **Strategy & Roadmap**: Lộ trình chuẩn bị phỏng vấn
+
+### 🎤 Interactive Mode (LangGraph)
+
+- **Real-time Q&A**: Phỏng vấn thực tế từng câu một
+- **Instant Feedback**: Đánh giá và điểm số ngay lập tức
+- **Progress Tracking**: Theo dõi tiến độ phỏng vấn
+- **Interview History**: Xem lại tất cả câu hỏi và feedback
+- **Final Summary**: Tổng kết chi tiết với điểm số và recommendations
+
+## 📊 System Diagrams
+
+Hệ thống có các PlantUML diagrams chi tiết:
+
+- **`architecture.puml`**: System architecture (component diagram)
+- **`flow_report_mode.puml`**: CrewAI workflow (sequence diagram)
+- **`flow_interactive_mode.puml`**: LangGraph workflow (sequence diagram)
+- **`langgraph_state_machine.puml`**: LangGraph state machine (state diagram)
+
+👉 **Xem hướng dẫn**: `DIAGRAMS_README.md`
 
 ## 📁 Project Structure
 
 ```
 Interview-Agent/
-├── ai/                          # AI/Agent Layer
+├── ai/                          # AI/Agent Layer (CrewAI)
 │   ├── prompts/                # YAML-based prompt configurations
-│   │   ├── agents/            # Agent configurations
-│   │   └── tasks/             # Task configurations
+│   │   ├── agents/            # Agent configs (JD Analyst, Researcher, Interviewer)
+│   │   └── tasks/             # Task configs (Analysis, Research, Dossier)
 │   ├── src/
-│   │   ├── agents/            # CrewAI agents
-│   │   ├── tasks/             # CrewAI tasks
-│   │   ├── crews/             # Crew definitions
-│   │   ├── models/            # Pydantic output models
-│   │   ├── tools/             # Custom tools
-│   │   ├── config.py          # LLM configuration
+│   │   ├── agents/            # CrewAI agent implementations
+│   │   ├── tasks/             # CrewAI task implementations
+│   │   ├── crews/             # Crew orchestration
+│   │   ├── models/            # Pydantic output schemas
+│   │   ├── tools/             # Custom tools (ScrapeWebsiteTool)
+│   │   ├── config.py          # LLM configuration (Groq)
 │   │   └── prompt_loader.py   # YAML prompt loader
 │   └── requirements.txt
 │
-├── service/                     # Backend API Layer
+├── service/                     # Backend API Layer (FastAPI)
 │   ├── src/
-│   │   ├── api.py             # FastAPI endpoints
-│   │   └── main.py            # Application entry
+│   │   ├── langgraph/         # LangGraph interactive interview
+│   │   │   ├── state.py       # InterviewState definition
+│   │   │   ├── nodes.py       # Graph nodes (ask, evaluate, summary)
+│   │   │   ├── graph.py       # StateGraph construction
+│   │   │   └── prompts.py     # LLM prompts for evaluation
+│   │   ├── api.py             # Main FastAPI app
+│   │   ├── api_langgraph.py   # LangGraph endpoints
+│   │   ├── api_combined.py    # Combined workflow endpoint
+│   │   └── main.py            # Entry point
+│   ├── examples/
+│   │   ├── langgraph_demo.py  # Interactive demo
+│   │   └── integrated_demo.py # Combined workflow demo
 │   └── requirements.txt
 │
-├── client/                      # Frontend Layer
-│   ├── app.py                  # Streamlit dashboard
-│   ├── public/                 # Static assets
+├── client/                      # Frontend Layer (Streamlit)
+│   ├── app.py                  # Main Streamlit dashboard
+│   ├── interactive_mode.py     # Interactive interview component
+│   ├── config.py               # Constants and mock data
+│   ├── styles.py               # Custom CSS
+│   ├── utils.py                # Utility functions
 │   └── README.md               # Client documentation
 │
 ├── scripts/                     # Utility scripts
 │   ├── start_server_new.sh    # Start FastAPI backend
 │   └── start_streamlit.sh     # Start Streamlit frontend
 │
+├── .agent/workflows/           # Workflow documentation
+│   └── langgraph-interview-flow.md
+│
 ├── docs/                        # Documentation
+├── INTEGRATION_GUIDE_VI.md     # Vietnamese integration guide
+├── LANGGRAPH_QUICKSTART.md     # LangGraph quick start
 └── requirements.txt             # Main dependencies
 ```
+
+## 🏗️ System Architecture
+
+### High-Level Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Streamlit Dashboard                       │
+│                   (client/app.py)                            │
+│  ┌────────────────────┐  ┌──────────────────────┐          │
+│  │   Report Mode      │  │  Interactive Mode    │          │
+│  │   (Static View)    │  │  (Real-time Q&A)     │          │
+│  └────────┬───────────┘  └──────────┬───────────┘          │
+└───────────┼──────────────────────────┼──────────────────────┘
+            │                          │
+            ▼                          ▼
+┌───────────────────────┐  ┌──────────────────────────┐
+│   FastAPI Backend     │  │   FastAPI Backend        │
+│   /api/prepare        │  │   /api/interview/*       │
+└───────────┬───────────┘  └──────────┬───────────────┘
+            │                          │
+            ▼                          ▼
+┌───────────────────────┐  ┌──────────────────────────┐
+│   CrewAI Workflow     │  │   LangGraph Workflow     │
+│   (Question Gen)      │  │   (Interactive Q&A)      │
+└───────────┬───────────┘  └──────────┬───────────────┘
+            │                          │
+            └──────────┬───────────────┘
+                       ▼
+              ┌─────────────────┐
+              │   Groq LLM API  │
+              │   (llama-3.3)   │
+              └─────────────────┘
+```
+
+### Component Responsibilities
+
+#### 1. **AI Layer** (`ai/`)
+
+**Purpose**: Question generation and analysis using CrewAI
+
+**Components**:
+
+- **JD Analyst Agent**: Analyzes job description vs CV
+- **Corporate Researcher Agent**: Researches company culture
+- **Lead Interviewer Agent**: Generates interview questions
+
+**Flow**:
+
+```
+Input (JD + CV) → JD Analyst → Corporate Researcher → Lead Interviewer → Questions
+```
+
+#### 2. **Service Layer** (`service/`)
+
+**Purpose**: API endpoints and business logic
+
+**Endpoints**:
+
+- `/api/prepare`: CrewAI question generation
+- `/api/interview/start`: Start LangGraph session
+- `/api/interview/chat/{thread_id}`: Submit answer
+- `/api/interview/summary/{thread_id}`: Get final summary
+- `/api/prepare-and-start`: Combined workflow
+
+#### 3. **LangGraph Layer** (`service/src/langgraph/`)
+
+**Purpose**: Interactive interview with state management
+
+**Nodes**:
+
+- `ask_question`: Present question to user
+- `evaluate_answer`: Score and provide feedback
+- `generate_summary`: Create final report
+
+**State**: Persisted via checkpointing (MemorySaver)
+
+#### 4. **Client Layer** (`client/`)
+
+**Purpose**: User interface
+
+**Modes**:
+
+- **Report Mode**: View all questions (static)
+- **Interactive Mode**: Practice with feedback (dynamic)
 
 ## 🚀 Quick Start
 
@@ -57,141 +180,84 @@ Interview-Agent/
 
 ### Installation
 
-1. **Clone the repository:**
+```bash
+# Clone repository
+git clone <your-repo-url>
+cd Interview-Agent
 
-   ```bash
-   git clone <your-repo-url>
-   cd Interview-Agent
-   ```
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
-2. **Create virtual environment:**
+# Install dependencies
+pip install -r requirements.txt
 
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install dependencies:**
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Configure environment:**
-   ```bash
-   cp .env.example .env
-   # Edit .env and add your GROQ_API_KEY
-   ```
+# Configure environment
+cp .env.example .env
+# Edit .env and add your GROQ_API_KEY
+```
 
 ### Running the Application
 
-#### Option 1: Full Stack (Recommended)
-
-**Terminal 1 - Backend API:**
+**Terminal 1 - Backend:**
 
 ```bash
 ./scripts/start_server_new.sh
 ```
 
-**Terminal 2 - Streamlit Dashboard:**
+**Terminal 2 - Frontend:**
 
 ```bash
 ./scripts/start_streamlit.sh
 ```
 
-Then open:
+**Access**:
 
-- **Dashboard**: http://localhost:8501
-- **API Docs**: http://localhost:8000/docs
+- Dashboard: http://localhost:8501
+- API Docs: http://localhost:8000/docs
 
-#### Option 2: API Only
+## 🎨 Usage Workflow
 
-```bash
-./scripts/start_server_new.sh
-```
-
-Access API at: http://localhost:8000
-
-## 🎨 Using the Dashboard
-
-1. **Fill in the sidebar:**
-
-   - Job Description
-   - Your CV/Resume
-   - Company Name
-   - Company Website
-
-2. **Configure settings:**
-
-   - Interview Tone (Friendly/Strict)
-   - Experience Level (Junior/Mid/Senior)
-
-3. **Start Analysis:**
-
-   - Click "🚀 Start Interview Analysis"
-   - Watch AI agents process your data
-
-4. **Explore Results:**
-   - **Strategy Tab**: Preparation roadmap and key points
-   - **Technical Tab**: Technical questions with difficulty levels
-   - **Behavioral Tab**: STAR framework guidance
-   - **Company Fit Tab**: Company-specific questions
-
-## 🏗️ Architecture
-
-### Data Flow
+### Report Mode (Static Analysis)
 
 ```
-Streamlit UI (client/app.py)
-    ↓ HTTP POST
-FastAPI Backend (service/src/api.py)
-    ↓
-CrewAI Orchestration (ai/src/crews/)
-    ↓
-AI Agents (ai/src/agents/)
-    ↓ Execute
-Tasks (ai/src/tasks/)
-    ↓ Use
-Prompts (ai/prompts/*.yaml)
-    ↓ Call
-Groq LLM API
-    ↓
-Structured JSON Output (ai/src/models/)
+1. Fill sidebar form (JD, CV, Company)
+   ↓
+2. Click "🚀 Start Interview Analysis"
+   ↓
+3. CrewAI generates questions (30-60s)
+   ↓
+4. View results in tabs:
+   - Strategy & Roadmap
+   - Technical Questions
+   - Behavioral Questions (STAR)
+   - Company Fit
 ```
 
-### Key Components
+### Interactive Mode (Practice Interview)
 
-#### 1. **AI Layer** (`ai/`)
-
-- **Agents**: JD Analyst, Corporate Researcher, Lead Interviewer
-- **Tasks**: Job analysis, company research, dossier preparation
-- **Prompts**: YAML-based configurations for maintainability
-- **Models**: Pydantic schemas for type-safe outputs
-
-#### 2. **Service Layer** (`service/`)
-
-- **FastAPI**: RESTful API with streaming support
-- **Endpoints**: `/api/prepare`, `/api/prepare-stream`, `/api/health`
-- **CORS**: Enabled for frontend integration
-
-#### 3. **Client Layer** (`client/`)
-
-- **Streamlit**: Interactive web dashboard
-- **Custom CSS**: Professional, modern design
-- **Session State**: Persistent data across interactions
+```
+1. Complete Report Mode first
+   ↓
+2. Switch to "🎤 Interactive Interview"
+   ↓
+3. Click "🎬 Start Interactive Interview"
+   ↓
+4. Answer questions one by one
+   ↓
+5. Receive instant feedback + score
+   ↓
+6. View final summary with recommendations
+```
 
 ## 🔧 Configuration
 
 ### Environment Variables
 
-Create a `.env` file:
-
 ```bash
-# Groq API Configuration
+# .env file
 GROQ_API_KEY=your_groq_api_key_here
 GROQ_MODEL_NAME=llama-3.3-70b-versatile
-
-# Optional: Logging
 LOG_LEVEL=INFO
 ```
 
@@ -199,50 +265,36 @@ LOG_LEVEL=INFO
 
 Edit YAML files in `ai/prompts/`:
 
-**Agents** (`ai/prompts/agents/*.yaml`):
-
 ```yaml
+# ai/prompts/agents/jd_analyst.yaml
 role: "Senior Technical Recruiter"
-goal: "Analyze job descriptions..."
-backstory: "You are an expert..."
-settings:
-  verbose: true
-  allow_delegation: false
+goal: "Analyze job descriptions and match with candidate profiles"
+backstory: "You are an expert in technical recruitment..."
 ```
 
-**Tasks** (`ai/prompts/tasks/*.yaml`):
+## 📚 API Reference
 
-```yaml
-name: "analyze_job_description"
-description_template: "Analyze {job_description}..."
-output_schema:
-  type: "object"
-  properties: { ... }
-```
-
-## 📚 API Documentation
-
-### Endpoints
+### CrewAI Endpoints
 
 #### `POST /api/prepare`
 
-Synchronous interview preparation.
+Generate interview questions using CrewAI.
 
-**Request:**
+**Request**:
 
 ```json
 {
-  "job_description": "string",
-  "user_cv": "string",
-  "company_name": "string",
-  "company_website": "string",
+  "job_description": "Senior Python Developer...",
+  "user_cv": "John Doe - 6 years...",
+  "company_name": "TechCorp",
+  "company_website": "https://techcorp.com",
   "tone": "friendly",
-  "level": "mid",
+  "level": "senior",
   "interview_type": "mixed"
 }
 ```
 
-**Response:**
+**Response**:
 
 ```json
 {
@@ -250,57 +302,81 @@ Synchronous interview preparation.
   "result": {
     "technical_questions": [...],
     "behavioral_questions": [...],
-    "company_specific_questions": [...],
     "interview_strategy": {...}
   }
 }
 ```
 
-#### `POST /api/prepare-stream`
+### LangGraph Endpoints
 
-Streaming interview preparation with real-time updates.
+#### `POST /api/interview/start`
 
-#### `GET /api/health`
+Start interactive interview session.
 
-Health check endpoint.
+**Request**:
 
-## 🧪 Testing
-
-```bash
-# Test backend API
-curl http://localhost:8000/api/health
-
-# Test with sample data
-curl -X POST http://localhost:8000/api/prepare \
-  -H "Content-Type: application/json" \
-  -d @sample_request.json
+```json
+{
+  "crewai_result": {
+    /* from /api/prepare */
+  },
+  "job_description": "...",
+  "user_cv": "...",
+  "company_name": "TechCorp"
+}
 ```
 
-## 📖 Documentation
+**Response**:
 
-- **AI Layer**: See `ai/prompts/README.md`
-- **Client Layer**: See `client/README.md`
-- **Groq Migration**: See `docs/GROQ_MIGRATION.md`
-- **Structure Overview**: See `docs/STRUCTURE_OVERVIEW.md`
+```json
+{
+  "thread_id": "uuid-1234",
+  "first_question": "Tell me about...",
+  "total_questions": 7
+}
+```
 
-## 🛠️ Development
+#### `POST /api/interview/chat/{thread_id}`
 
-### Adding New Features
+Submit answer and get feedback.
 
-1. **New Agent**: Create YAML in `ai/prompts/agents/`
-2. **New Task**: Create YAML in `ai/prompts/tasks/`
-3. **New Endpoint**: Add to `service/src/api.py`
-4. **UI Update**: Modify `client/app.py`
+**Request**:
 
-### Code Style
+```json
+{
+  "answer": "I have 6 years of Python experience..."
+}
+```
 
-- **Python**: Follow PEP 8
-- **YAML**: Use 2-space indentation
-- **Prompts**: Keep clear and specific
+**Response**:
+
+```json
+{
+  "feedback": {
+    "score": 8.5,
+    "feedback": "Excellent answer...",
+    "strengths": [...],
+    "improvements": [...]
+  },
+  "next_question": "...",
+  "progress": {"current": 2, "total": 7},
+  "interview_complete": false
+}
+```
 
 ## 🐛 Troubleshooting
 
-### Backend won't start
+### Rate Limit Errors
+
+**Problem**: Groq API rate limit exceeded
+
+**Solution**:
+
+- CrewAI memory has been disabled to reduce token usage
+- Wait a few minutes between requests
+- Consider upgrading Groq API tier
+
+### Backend Won't Start
 
 ```bash
 # Check Python version
@@ -313,25 +389,39 @@ pip install -r requirements.txt
 echo $GROQ_API_KEY
 ```
 
-### Streamlit errors
-
-```bash
-# Reinstall Streamlit
-pip install --upgrade streamlit
-
-# Clear cache
-streamlit cache clear
-```
-
-### API connection errors
+### Streamlit Connection Errors
 
 ```bash
 # Verify backend is running
 curl http://localhost:8000/api/health
 
-# Check logs
-tail -f logs/api.log
+# Restart backend
+./scripts/start_server_new.sh
 ```
+
+## 📖 Documentation
+
+- **Integration Guide**: `INTEGRATION_GUIDE_VI.md`
+- **LangGraph Quick Start**: `LANGGRAPH_QUICKSTART.md`
+- **Workflow Diagram**: `.agent/workflows/langgraph-interview-flow.md`
+- **Client Guide**: `client/README.md`
+
+## 🛠️ Development
+
+### Adding New Features
+
+1. **New Agent**: Create YAML in `ai/prompts/agents/`
+2. **New Task**: Create YAML in `ai/prompts/tasks/`
+3. **New LangGraph Node**: Add to `service/src/langgraph/nodes.py`
+4. **New API Endpoint**: Add to `service/src/api.py`
+5. **UI Update**: Modify `client/app.py`
+
+### Code Organization
+
+- **Separation of Concerns**: AI, Service, Client layers
+- **YAML-based Prompts**: Easy to modify without code changes
+- **Type Safety**: Pydantic models for all data structures
+- **Modular Design**: Each component is independent
 
 ## 🤝 Contributing
 
@@ -347,19 +437,12 @@ tail -f logs/api.log
 
 ## 🙏 Acknowledgments
 
-- **CrewAI**: Multi-agent orchestration
+- **CrewAI**: Multi-agent orchestration framework
+- **LangGraph**: Stateful agent workflows
 - **Groq**: Fast LLM inference
-- **Streamlit**: Beautiful web dashboards
+- **Streamlit**: Interactive web dashboards
 - **FastAPI**: Modern Python web framework
-
-## 📧 Support
-
-For issues or questions:
-
-- Check the documentation in `docs/`
-- Review `client/README.md` for UI help
-- Check API docs at http://localhost:8000/docs
 
 ---
 
-**Built with ❤️ using CrewAI, Groq, Streamlit, and FastAPI**
+**Built with ❤️ using CrewAI, LangGraph, Groq, Streamlit, and FastAPI**

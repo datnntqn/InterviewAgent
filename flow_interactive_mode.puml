@@ -1,0 +1,150 @@
+@startuml Interactive_Mode_Sequence
+
+title Interactive Mode - LangGraph Q&A Flow
+
+actor User
+participant "Streamlit\nInteractive Mode" as UI
+participant "FastAPI\n/api/interview/*" as API
+participant "LangGraph\nStateGraph" as Graph
+participant "ask_question\nNode" as NodeAsk
+participant "evaluate_answer\nNode" as NodeEval
+participant "generate_summary\nNode" as NodeSummary
+participant "Groq LLM\nAPI" as LLM
+database "MemorySaver\n(State)" as State
+
+== Session Initialization ==
+User -> UI: Switch to Interactive Mode
+UI -> UI: Check analysis_result exists
+User -> UI: Click "Start Interview"
+
+UI -> API: POST /api/interview/start\n{crewai_result, job_description,\nuser_cv, company_name}
+activate API
+
+API -> API: parse_crewai_questions()\nExtract & format questions
+
+API -> Graph: create_initial_state()\nInitialize InterviewState
+activate Graph
+
+Graph -> State: Save initial state\n(thread_id: uuid)
+State --> Graph: State persisted
+
+Graph -> NodeAsk: Execute ask_question
+activate NodeAsk
+
+NodeAsk -> NodeAsk: Get questions[0]
+NodeAsk -> NodeAsk: Create AIMessage
+NodeAsk -> State: Update chat_history\nSet awaiting_user_input=True
+NodeAsk --> Graph: State updated
+deactivate NodeAsk
+
+Graph --> API: Return state\n{first_question, total_questions}
+deactivate Graph
+
+API --> UI: HTTP 200\n{thread_id, first_question,\ntotal_questions, question_number}
+deactivate API
+
+UI --> User: Display Question 1\n+ Progress bar\n+ Answer input
+
+== Q&A Loop (Repeat for each question) ==
+User -> UI: Type answer
+User -> UI: Click "Submit Answer"
+
+UI -> API: POST /api/interview/chat/{thread_id}\n{answer: "..."}
+activate API
+
+API -> Graph: get_state(thread_id)
+activate Graph
+Graph -> State: Load state
+State --> Graph: Current state
+
+Graph -> Graph: Add HumanMessage(answer)\nto chat_history
+
+Graph -> NodeEval: Execute evaluate_answer
+activate NodeEval
+
+NodeEval -> NodeEval: Extract user's answer\nfrom chat_history
+
+NodeEval -> NodeEval: Get current question\nDetermine type (technical/behavioral)
+
+alt Technical Question
+    NodeEval -> LLM: Evaluate technical answer\n(EVALUATE_TECHNICAL_ANSWER_PROMPT)
+    activate LLM
+    LLM --> NodeEval: {score, strengths,\nimprovements, feedback}
+    deactivate LLM
+else Behavioral Question
+    NodeEval -> LLM: Evaluate behavioral answer\n(EVALUATE_BEHAVIORAL_ANSWER_PROMPT)
+    activate LLM
+    LLM --> NodeEval: {score, star_analysis,\nstrengths, improvements, feedback}
+    deactivate LLM
+end
+
+NodeEval -> NodeEval: Create score_entry\n{question_index, score, feedback}
+
+NodeEval -> State: Update state:\n- scores.append(score_entry)\n- current_index++\n- current_feedback
+State --> NodeEval: State updated
+
+NodeEval --> Graph: Evaluation complete
+deactivate NodeEval
+
+Graph -> Graph: determine_next_step()
+
+alt More Questions Remain
+    Graph -> NodeAsk: Execute ask_question
+    activate NodeAsk
+    NodeAsk -> NodeAsk: Get questions[current_index]
+    NodeAsk -> State: Update chat_history\nwith next question
+    NodeAsk --> Graph: Next question ready
+    deactivate NodeAsk
+    
+    Graph --> API: Return state\n{feedback, next_question,\nprogress, interview_complete: false}
+    
+else All Questions Answered
+    Graph -> NodeSummary: Execute generate_summary
+    activate NodeSummary
+    
+    NodeSummary -> NodeSummary: Calculate averages:\n- technical_avg\n- behavioral_avg\n- overall_avg
+    
+    NodeSummary -> LLM: Generate summary\n(GENERATE_SUMMARY_PROMPT)
+    activate LLM
+    LLM --> NodeSummary: {overall_score, strengths,\nareas_for_improvement,\nrecommendations}
+    deactivate LLM
+    
+    NodeSummary -> State: Update state:\n- final_summary\n- interview_complete=True
+    State --> NodeSummary: State updated
+    
+    NodeSummary --> Graph: Summary complete
+    deactivate NodeSummary
+    
+    Graph --> API: Return state\n{feedback, interview_complete: true}
+end
+
+deactivate Graph
+
+API --> UI: HTTP 200\n{feedback, next_question,\nprogress, interview_complete}
+deactivate API
+
+UI -> UI: Add to interview_history
+UI -> UI: Update progress
+
+alt Interview Not Complete
+    UI --> User: Show feedback\n+ Next question
+    note right: Loop back to "Type answer"
+else Interview Complete
+    UI --> User: Show "Interview Complete!"
+    User -> UI: View summary
+    
+    UI -> API: GET /api/interview/summary/{thread_id}
+    activate API
+    API -> Graph: get_state(thread_id)
+    activate Graph
+    Graph -> State: Load final state
+    State --> Graph: State with final_summary
+    Graph --> API: Return final_summary
+    deactivate Graph
+    API --> UI: HTTP 200\n{overall_score, strengths,\nareas_for_improvement,\nrecommendations, detailed_scores}
+    deactivate API
+    
+    UI --> User: Display Final Summary:\n- Overall Score\n- Performance Breakdown\n- Strengths\n- Improvements\n- Recommendations
+end
+
+@enduml

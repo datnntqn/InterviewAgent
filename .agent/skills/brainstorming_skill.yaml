@@ -1,0 +1,18 @@
+name: brainstorming
+description: "Sử dụng trước khi thực hiện bất kỳ công việc sáng tạo nào để khám phá ý tưởng và thiết kế."
+instructions: |
+  # Quy trình Brainstorming
+  - Luôn kiểm tra trạng thái dự án hiện tại (files, docs) trước.
+  - Chỉ đặt MỘT câu hỏi tại một thời điểm.
+  - Ưu tiên câu hỏi trắc nghiệm (A, B, C) để người dùng dễ chọn.
+  - Đề xuất 2-3 phương án tiếp cận kèm ưu/nhược điểm.
+  - Trình bày thiết kế theo từng phần nhỏ (200-300 từ) và đợi xác nhận.
+
+  # Sau khi thiết kế
+  - Ghi tài liệu vào `docs/plans/YYYY-MM-DD-<topic>-design.md`.
+  - Sử dụng công cụ Git để commit bản thiết kế.
+
+tools:
+  - name: file_system_read
+  - name: file_system_write
+  - name: git_operations

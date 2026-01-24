@@ -479,12 +479,19 @@ Projects:
             
             if result and result.get('status') == 'success':
                 # Parse the result string to JSON
-                result_data = result.get('result', '{}')
+                result_data = result.get('result', {})
+                
+                # Ensure result_data is a dictionary
                 if isinstance(result_data, str):
                     try:
                         result_data = json.loads(result_data)
-                    except:
-                        pass
+                    except json.JSONDecodeError:
+                        st.error("Failed to parse result data")
+                        result_data = {}
+                
+                # If still not a dict, make it empty dict
+                if not isinstance(result_data, dict):
+                    result_data = {}
                 
                 st.session_state.analysis_result = result_data
                 status.update(label="✅ Analysis Complete!", state="complete")
@@ -498,28 +505,47 @@ Projects:
     if st.session_state.analysis_result:
         data = st.session_state.analysis_result
         
+        # Extra safety check
+        if not isinstance(data, dict):
+            st.error("Invalid data format. Please run analysis again.")
+            st.session_state.analysis_result = None
+            st.stop()
+        
         st.title("📊 Your Interview Preparation Dashboard")
         st.markdown("---")
         
-        # Create tabs
-        tab1, tab2, tab3, tab4 = st.tabs([
-            "🎯 Strategy & Roadmap",
-            "💻 Technical Round",
-            "🤝 Behavioral (STAR)",
-            "🏢 Company Fit"
-        ])
+        # Create mode selector
+        mode = st.radio(
+            "Choose Mode:",
+            ["📋 Report Mode", "🎤 Interactive Interview"],
+            horizontal=True,
+            help="Report Mode: View all questions and strategy. Interactive Mode: Practice with real-time feedback."
+        )
         
-        with tab1:
-            render_strategy_tab(data)
+        if mode == "📋 Report Mode":
+            # Create tabs for report mode
+            tab1, tab2, tab3, tab4 = st.tabs([
+                "🎯 Strategy & Roadmap",
+                "💻 Technical Round",
+                "🤝 Behavioral (STAR)",
+                "🏢 Company Fit"
+            ])
+            
+            with tab1:
+                render_strategy_tab(data)
+            
+            with tab2:
+                render_technical_tab(data)
+            
+            with tab3:
+                render_behavioral_tab(data)
+            
+            with tab4:
+                render_company_tab(data)
         
-        with tab2:
-            render_technical_tab(data)
-        
-        with tab3:
-            render_behavioral_tab(data)
-        
-        with tab4:
-            render_company_tab(data)
+        else:  # Interactive Interview Mode
+            from interactive_mode import render_interactive_mode
+            render_interactive_mode()
     
     else:
         # Welcome screen

@@ -36,6 +36,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include LangGraph router if available
+try:
+    from .api_langgraph import router as langgraph_router
+    app.include_router(langgraph_router)
+    logger.info("✅ LangGraph interactive interview endpoints enabled")
+    LANGGRAPH_ENABLED = True
+except ImportError as e:
+    logger.warning(f"⚠️  LangGraph not available: {e}")
+    LANGGRAPH_ENABLED = False
+
+# Include combined workflow router
+try:
+    from .api_combined import router as combined_router
+    app.include_router(combined_router)
+    logger.info("✅ Combined CrewAI + LangGraph workflow enabled")
+except ImportError as e:
+    logger.warning(f"⚠️  Combined workflow not available: {e}")
+
 
 class InterviewRequest(BaseModel):
     """Request model for interview preparation."""
@@ -51,14 +69,29 @@ class InterviewRequest(BaseModel):
 @app.get("/")
 async def root():
     """Root endpoint."""
+    endpoints = {
+        "prepare": "/api/prepare",
+        "prepare_stream": "/api/prepare-stream",
+        "health": "/api/health"
+    }
+    
+    if LANGGRAPH_ENABLED:
+        endpoints.update({
+            "prepare_and_start": "/api/prepare-and-start (Combined: CrewAI + LangGraph)",
+            "interview_start": "/api/interview/start",
+            "interview_chat": "/api/interview/chat/{thread_id}",
+            "interview_summary": "/api/interview/summary/{thread_id}"
+        })
+    
     return {
         "message": "AI Mock Interview Agent API",
-        "version": "1.0.0",
-        "endpoints": {
-            "prepare": "/api/prepare",
-            "prepare_stream": "/api/prepare-stream",
-            "health": "/api/health"
-        }
+        "version": "2.0.0",
+        "features": {
+            "static_report": True,
+            "interactive_interview": LANGGRAPH_ENABLED,
+            "combined_workflow": LANGGRAPH_ENABLED
+        },
+        "endpoints": endpoints
     }
 
 
@@ -201,6 +234,20 @@ async def prepare_interview(request: InterviewRequest):
         
     except Exception as e:
         logger.error(f"Error during interview preparation: {e}", exc_info=True)
+        
+        # Check if it's a rate limit error
+        error_str = str(e)
+        if "rate_limit" in error_str.lower() or "429" in error_str:
+            raise HTTPException(
+                status_code=429,
+                detail={
+                    "error": "Rate limit exceeded",
+                    "message": "Groq API rate limit reached. Please wait a moment and try again.",
+                    "suggestion": "The system uses Groq's free tier which has token limits. Please wait 15-30 seconds before retrying.",
+                    "alternative": "Consider using a smaller model or upgrading your Groq API tier."
+                }
+            )
+        
         raise HTTPException(status_code=500, detail=str(e))
 
 
